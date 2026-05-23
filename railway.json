@@ -6,8 +6,8 @@
   },
   "deploy": {
     "startCommand": "php -S 0.0.0.0:$PORT index.php",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/health",
     "restartPolicyType": "always",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetires": 5
   }
 }

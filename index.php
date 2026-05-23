@@ -5,6 +5,14 @@ declare(strict_types=1);
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $route = '/' . trim($requestUri, '/');
 
+// Healthcheck (no auth required)
+if ($route === '/health') {
+    header('Content-Type: text/plain');
+    http_response_code(200);
+    echo 'OK';
+    exit;
+}
+
 $apiRoutes = [
     '/api/login'      => __DIR__ . '/api/login.php',
     '/api/products'   => __DIR__ . '/api/products.php',
