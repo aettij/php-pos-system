@@ -25,6 +25,23 @@ final class Database
             }
         }
 
+        // Support DATABASE_URL (Railway, Heroku, Render, etc.)
+        $dbUrl = getenv('DATABASE_URL');
+        if ($dbUrl) {
+            $parts = parse_url($dbUrl);
+            $dbname = ltrim($parts['path'] ?? '', '/');
+            self::$config = [
+                'driver'   => 'pgsql',
+                'host'     => $parts['host'] ?? '127.0.0.1',
+                'port'     => (string)($parts['port'] ?? '5432'),
+                'dbname'   => $dbname ?: 'railway',
+                'user'     => $parts['user'] ?? 'postgres',
+                'password' => $parts['pass'] ?? '',
+                'schema'   => getenv('DB_SCHEMA') ?: 'public',
+            ];
+            return;
+        }
+
         self::$config = [
             'driver'   => getenv('DB_DRIVER') ?: 'pgsql',
             'host'     => getenv('DB_HOST') ?: '127.0.0.1',
