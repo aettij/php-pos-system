@@ -12,10 +12,6 @@ Logger::init();
 set_exception_handler(function (\Throwable $e): void {
     Logger::exception($e);
 
-    $message = getenv('APP_ENV') === 'production'
-        ? 'Internal server error'
-        : $e->getMessage();
-
     if (!headers_sent()) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(500);
@@ -23,7 +19,7 @@ set_exception_handler(function (\Throwable $e): void {
 
     echo json_encode([
         'success' => false,
-        'message' => $message,
+        'message' => $e->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
     exit;
 });
