@@ -15,9 +15,6 @@ if ($method !== 'GET') {
 $db = Database::connect();
 $storeId = $user['store_id'];
 
-$storeParam = ':store_id';
-$storeClause = '(s.store_id = :store_id OR s.store_id IS NULL)';
-
 $todayStart = date('Y-m-d 00:00:00');
 $monthStart = date('Y-m-01 00:00:00');
 
@@ -28,69 +25,44 @@ if ($cached !== null) {
     jsonSuccess(json_decode($cached, true));
 }
 
-// Today's revenue
-$stmt = $db->prepare("
-        SELECT
-            COUNT(s.id)::INT AS total_transactions,
-            COALESCE(SUM(s.total_amount), 0) AS total_revenue,
-            COALESCE(AVG(s.total_amount), 0) AS avg_basket,
-            COALESCE(SUM(s.discount_amount), 0) AS total_discounts
-        FROM sales s
-        WHERE s.status = 'completed'
-          AND s.sale_date >= :today
-          AND $storeClause
-    ");
-    $stmt->execute([':today' => $todayStart, ':store_id' => $storeId]);
-    $todayStats = $stmt->fetch();
+$storeClause = '(store_id = :store_id OR store_id IS NULL)';
 
-    // Monthly revenue
-    $stmt = $db->prepare("
-        SELECT
-            COUNT(s.id)::INT AS total_transactions,
-            COALESCE(SUM(s.total_amount), 0) AS total_revenue,
-            COALESCE(SUM(s.total_amount - s.tax_amount), 0) AS net_revenue
-        FROM sales s
-        WHERE s.status = 'completed'
-          AND s.sale_date >= :month
-          AND $storeClause
-    ");
-    $stmt->execute([':month' => $monthStart, ':store_id' => $storeId]);
-    $monthStats = $stmt->fetch();
-
-// Low stock products count
+// Combined product stats (total, low stock, out of stock, stock value)
 $stmt = $db->prepare("
-    SELECT COUNT(*)::INT FROM products
-    WHERE is_active = TRUE AND is_service = FALSE
-      AND stock_quantity <= stock_min
-      AND (store_id = :store_id OR store_id IS NULL)
+    SELECT
+        COUNT(*) FILTER (WHERE is_active = TRUE)::INT AS total_products,
+        COUNT(*) FILTER (WHERE is_active = TRUE AND is_service = FALSE AND stock_quantity <= stock_min AND stock_quantity > 0)::INT AS low_stock,
+        COUNT(*) FILTER (WHERE is_active = TRUE AND is_service = FALSE AND stock_quantity <= 0)::INT AS out_of_stock,
+        COALESCE(SUM(stock_quantity * purchase_price) FILTER (WHERE is_active = TRUE AND is_service = FALSE), 0) AS stock_value
+    FROM products
+    WHERE $storeClause
 ");
 $stmt->execute([':store_id' => $storeId]);
-$lowStockCount = (int)$stmt->fetchColumn();
+$invStats = $stmt->fetch();
 
-// Out of stock count
+// Combined today + month revenue
 $stmt = $db->prepare("
-    SELECT COUNT(*)::INT FROM products
-    WHERE is_active = TRUE AND is_service = FALSE
-      AND stock_quantity <= 0
-      AND (store_id = :store_id OR store_id IS NULL)
+    SELECT
+        COUNT(*) FILTER (WHERE sale_date >= :today)::INT AS today_transactions,
+        COALESCE(SUM(total_amount) FILTER (WHERE sale_date >= :today), 0) AS today_revenue,
+        COALESCE(AVG(total_amount) FILTER (WHERE sale_date >= :today), 0) AS today_avg_basket,
+        COALESCE(SUM(discount_amount) FILTER (WHERE sale_date >= :today), 0) AS today_discounts,
+        COUNT(*) FILTER (WHERE sale_date >= :month)::INT AS month_transactions,
+        COALESCE(SUM(total_amount) FILTER (WHERE sale_date >= :month), 0) AS month_revenue,
+        COALESCE(SUM(total_amount - tax_amount) FILTER (WHERE sale_date >= :month), 0) AS month_net_revenue
+    FROM sales
+    WHERE status = 'completed'
+      AND sale_date >= :month
+      AND $storeClause
 ");
-$stmt->execute([':store_id' => $storeId]);
-$outOfStockCount = (int)$stmt->fetchColumn();
-
-// Active products count
-$stmt = $db->prepare("
-    SELECT COUNT(*)::INT FROM products
-    WHERE is_active = TRUE
-      AND (store_id = :store_id OR store_id IS NULL)
-");
-$stmt->execute([':store_id' => $storeId]);
-$totalProducts = (int)$stmt->fetchColumn();
+$stmt->execute([':today' => $todayStart, ':month' => $monthStart, ':store_id' => $storeId]);
+$revStats = $stmt->fetch();
 
 // Active customers count
 $stmt = $db->prepare("
     SELECT COUNT(*)::INT FROM customers
     WHERE is_active = TRUE
-      AND (store_id = :store_id OR store_id IS NULL)
+      AND $storeClause
 ");
 $stmt->execute([':store_id' => $storeId]);
 $totalCustomers = (int)$stmt->fetchColumn();
@@ -103,7 +75,7 @@ $stmt = $db->prepare("
     FROM sales s
     LEFT JOIN users u ON u.id = s.user_id
     LEFT JOIN customers c ON c.id = s.customer_id
-    WHERE $storeClause
+    WHERE (s.store_id = :store_id OR s.store_id IS NULL)
     ORDER BY s.created_at DESC
     LIMIT 10
 ");
@@ -132,43 +104,34 @@ $stmt = $db->prepare("
     FROM sales s
     WHERE s.status = 'completed'
       AND s.sale_date >= NOW() - INTERVAL '14 days'
-      AND $storeClause
+      AND (s.store_id = :store_id OR s.store_id IS NULL)
     GROUP BY DATE(s.sale_date)
     ORDER BY day
 ");
 $stmt->execute([':store_id' => $storeId]);
 $revenueByDay = $stmt->fetchAll();
 
-// Stock value
-$stmt = $db->prepare("
-    SELECT COALESCE(SUM(stock_quantity * purchase_price), 0) AS total_stock_value
-    FROM products
-    WHERE is_active = TRUE AND is_service = FALSE
-      AND (store_id = :store_id OR store_id IS NULL)
-");
-$stmt->execute([':store_id' => $storeId]);
-$stockValue = (float)$stmt->fetchColumn();
-
-$activeAlerts = $lowStockCount + $outOfStockCount;
+$lowStockCount = (int)$invStats['low_stock'];
+$outOfStockCount = (int)$invStats['out_of_stock'];
 
 $data = [
     'today' => [
-        'transactions' => (int)$todayStats['total_transactions'],
-        'revenue'      => (float)$todayStats['total_revenue'],
-        'avg_basket'   => round((float)$todayStats['avg_basket'], 2),
-        'discounts'    => (float)$todayStats['total_discounts'],
+        'transactions' => (int)$revStats['today_transactions'],
+        'revenue'      => (float)$revStats['today_revenue'],
+        'avg_basket'   => round((float)$revStats['today_avg_basket'], 2),
+        'discounts'    => (float)$revStats['today_discounts'],
     ],
     'month' => [
-        'transactions' => (int)$monthStats['total_transactions'],
-        'revenue'      => (float)$monthStats['total_revenue'],
-        'net_revenue'  => (float)$monthStats['net_revenue'],
+        'transactions' => (int)$revStats['month_transactions'],
+        'revenue'      => (float)$revStats['month_revenue'],
+        'net_revenue'  => (float)$revStats['month_net_revenue'],
     ],
     'inventory' => [
-        'total_products'  => $totalProducts,
+        'total_products'  => (int)$invStats['total_products'],
         'low_stock'       => $lowStockCount,
         'out_of_stock'    => $outOfStockCount,
-        'active_alerts'   => $activeAlerts,
-        'stock_value'     => $stockValue,
+        'active_alerts'   => $lowStockCount + $outOfStockCount,
+        'stock_value'     => (float)$invStats['stock_value'],
     ],
     'customers' => [
         'total' => $totalCustomers,

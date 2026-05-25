@@ -108,10 +108,18 @@ switch ($method) {
 
         $stmt = $db->prepare("
             SELECT po.*, s.company_name, s.contact_name,
-                   u.first_name || ' ' || u.last_name AS user_name
+                   u.first_name || ' ' || u.last_name AS user_name,
+                   COALESCE(ic.items_count, 0) AS items_count,
+                   COALESCE(ic.total_qty, 0) AS total_qty
             FROM purchase_orders po
             JOIN suppliers s ON s.id = po.supplier_id
             LEFT JOIN users u ON u.id = po.user_id
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*)::INT AS items_count,
+                       COALESCE(SUM(ordered_qty), 0) AS total_qty
+                FROM purchase_order_items
+                WHERE order_id = po.id
+            ) ic ON true
             $where
             ORDER BY po.created_at DESC
             LIMIT :limit OFFSET :offset
@@ -123,15 +131,6 @@ switch ($method) {
         }
         $stmt->execute();
         $orders = $stmt->fetchAll();
-
-        // Fetch items count for each order
-        foreach ($orders as &$o) {
-            $icStmt = $db->prepare('SELECT COUNT(*)::INT AS cnt, COALESCE(SUM(ordered_qty), 0)::NUMERIC(10,2) AS total_qty_sum FROM purchase_order_items WHERE order_id = :oid');
-            $icStmt->execute([':oid' => $o['id']]);
-            $counts = $icStmt->fetch();
-            $o['items_count'] = (int)$counts['cnt'];
-            $o['total_qty'] = (float)$counts['total_qty_sum'];
-        }
 
         jsonSuccess([
             'orders'     => $orders,

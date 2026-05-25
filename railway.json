@@ -5,6 +5,8 @@
   },
   "deploy": {
     "restartPolicyType": "always",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetries": 5,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30
   }
 }

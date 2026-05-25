@@ -70,12 +70,13 @@ final class Database
 
             try {
                 $start = microtime(true);
-                self::$instance = new PDO($dsn, $cfg['user'], $cfg['password'], [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
-                    PDO::ATTR_STRINGIFY_FETCHES  => false,
-                ]);
+            self::$instance = new PDO($dsn, $cfg['user'], $cfg['password'], [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => true,
+                PDO::ATTR_STRINGIFY_FETCHES  => false,
+                PDO::ATTR_TIMEOUT            => 5,
+            ]);
                 $duration = (microtime(true) - $start) * 1000;
                 if ($duration > 100 && !self::$loggedSlow) {
                     self::$loggedSlow = true;

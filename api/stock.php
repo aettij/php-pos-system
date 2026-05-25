@@ -53,6 +53,7 @@ switch ($method) {
             ]);
         } else {
             // Stock status view
+            [$page, $perPage, $offset] = getPaginationParams();
             $search = getSearchTerm();
             $where = 'WHERE (p.store_id = :store_id OR p.store_id IS NULL)';
             $params = [':store_id' => $user['store_id']];
@@ -70,6 +71,10 @@ switch ($method) {
             } elseif ($filter === 'overstock') {
                 $where .= ' AND p.stock_max IS NOT NULL AND p.stock_quantity >= p.stock_max';
             }
+
+            $countStmt = $db->prepare("SELECT COUNT(*) FROM products p $where");
+            $countStmt->execute($params);
+            $total = (int)$countStmt->fetchColumn();
 
             $stmt = $db->prepare("
                 SELECT p.id, p.name, p.barcode, p.sku, p.stock_quantity, p.stock_min,
@@ -92,11 +97,20 @@ switch ($method) {
                         ELSE 2
                     END,
                     p.name
+                LIMIT :limit OFFSET :offset
             ");
-            $stmt->execute($params);
+            $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->execute();
             $products = $stmt->fetchAll();
 
-            jsonSuccess(['products' => $products]);
+            jsonSuccess([
+                'products'   => $products,
+                'pagination' => buildPaginationMeta($total, $page, $perPage),
+            ]);
         }
         break;
 
