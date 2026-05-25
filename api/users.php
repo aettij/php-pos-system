@@ -67,9 +67,16 @@ switch ($method) {
         $stmt = $db->prepare("
             SELECT u.id, u.store_id, u.first_name, u.last_name, u.email,
                    u.phone, u.is_active, u.last_login_at, u.created_at,
-                   s.name AS store_name
+                   s.name AS store_name,
+                   COALESCE(r.role_names, '[]'::jsonb) AS roles
             FROM users u
             LEFT JOIN stores s ON s.id = u.store_id
+            LEFT JOIN LATERAL (
+                SELECT jsonb_agg(r2.name ORDER BY r2.name) AS role_names
+                FROM user_roles ur2
+                JOIN roles r2 ON r2.id = ur2.role_id
+                WHERE ur2.user_id = u.id
+            ) r ON true
             $where
             ORDER BY $sort
             LIMIT :limit OFFSET :offset
@@ -82,10 +89,9 @@ switch ($method) {
         $stmt->execute();
         $users = $stmt->fetchAll();
 
+        // Cast roles from JSON string to array
         foreach ($users as &$u) {
-            $rStmt = $db->prepare('SELECT r.name FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = :uid');
-            $rStmt->execute([':uid' => $u['id']]);
-            $u['roles'] = array_column($rStmt->fetchAll(), 'name');
+            $u['roles'] = json_decode($u['roles'] ?? '[]', true);
         }
 
         jsonSuccess([

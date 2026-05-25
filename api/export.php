@@ -19,15 +19,16 @@ $writer = new XlsxWriter();
 
 switch ($type) {
     case 'customers':
-        $stmt = $db->prepare('SELECT * FROM customers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY name');
+        $stmt = $db->prepare('SELECT * FROM customers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY first_name, last_name');
         $stmt->execute([':store_id' => $user['store_id']]);
         $rows = $stmt->fetchAll();
         $writer->addSheet('Customers', [
             'id'         => 'ID',
-            'name'       => 'Name',
+            'first_name' => 'First Name',
+            'last_name'  => 'Last Name',
             'email'      => 'Email',
             'phone'      => 'Phone',
-            'address'    => 'Address',
+            'city'       => 'City',
             'created_at' => 'Created',
         ], $rows);
         break;
@@ -71,15 +72,16 @@ switch ($type) {
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             LEFT JOIN roles r ON r.id = ur.role_id
             GROUP BY u.id, s.name
-            ORDER BY u.username
+            ORDER BY u.first_name, u.last_name
         ');
         $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Users', [
             'id'           => 'ID',
-            'username'     => 'Username',
+            'first_name'   => 'First Name',
+            'last_name'    => 'Last Name',
             'email'        => 'Email',
-            'display_name' => 'Display Name',
+            'phone'        => 'Phone',
             'store_name'   => 'Store',
             'role_names'   => 'Roles',
             'is_active'    => 'Active',
