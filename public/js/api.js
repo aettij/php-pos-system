@@ -45,7 +45,18 @@ const API = (() => {
 
         try {
             const response = await fetch(url, config);
-            const data = await response.json();
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (_) {
+                // Response is not JSON — try to read as text for debugging
+                const text = await response.text();
+                const error = new Error(text.slice(0, 500) || `HTTP ${response.status} (non-JSON response)`);
+                error.status = response.status;
+                error.data = { raw: text.slice(0, 1000) };
+                throw error;
+            }
 
             if (!response.ok) {
                 const error = new Error(data.message || `HTTP ${response.status}`);
