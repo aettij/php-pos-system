@@ -2496,7 +2496,7 @@ const App = (() => {
                                     <td style="text-align:right">
                                         <button class="btn btn-sm btn-secondary" data-edit-user="${u.id}">Modifier</button>
                                         <button class="btn btn-sm btn-secondary" data-roles-user="${u.id}" data-name="${u.first_name} ${u.last_name}">Rôles</button>
-                                        ${u.id !== state.user.id ? `<button class="btn btn-sm btn-danger" data-delete-user="${u.id}">Désactiver</button>` : ''}
+                                        ${isAdmin() && u.id !== state.user.id ? `<button class="btn btn-sm btn-danger" data-delete-user="${u.id}">Désactiver</button>` : ''}
                                     </td>
                                 </tr>
                             `).join('')}
