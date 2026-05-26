@@ -2128,6 +2128,7 @@ const App = (() => {
             });
         } catch (err) {
             showToast(err.message || 'Échec du chargement des produits', 'error');
+            return;
         }
 
         const modal = createModal({
