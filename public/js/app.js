@@ -2101,6 +2101,7 @@ const App = (() => {
         let customerOptions = '<option value="">Client libre</option>';
         let productRowsHtml = '';
         const barcodeMap = {};
+        let productMap = {};
 
         try {
             const [custRes, prodRes] = await Promise.all([
@@ -2113,7 +2114,7 @@ const App = (() => {
             ).join('');
 
             const products = (prodRes.data.products || []).filter(p => p.is_active);
-            const productMap = {};
+            productMap = {};
             products.forEach(p => {
                 productMap[p.id] = p;
                 if (p.barcode) barcodeMap[p.barcode] = p;
