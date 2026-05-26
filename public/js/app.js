@@ -2112,13 +2112,18 @@ const App = (() => {
                 `<option value="${c.id}">${c.first_name} ${c.last_name}</option>`
             ).join('');
 
-            (prodRes.data.products || []).filter(p => p.is_active).forEach(p => {
+            const products = (prodRes.data.products || []).filter(p => p.is_active);
+            const productMap = {};
+            products.forEach(p => {
+                productMap[p.id] = p;
                 if (p.barcode) barcodeMap[p.barcode] = p;
+                const name = p.name.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const meta = (p.barcode ? p.barcode : '') + (p.barcode && p.category_name ? ' &middot; ' : '') + (p.category_name ? p.category_name.replace(/"/g, '&quot;') : '');
                 productRowsHtml += `
-                <div class="product-card" data-pid="${p.id}" data-name="${p.name}" data-price="${p.selling_price}" data-tax="${p.tax_rate}" data-barcode="${p.barcode || ''}">
+                <div class="product-card" data-pid="${p.id}" data-name="${name}" data-price="${p.selling_price}" data-tax="${p.tax_rate}" data-barcode="${p.barcode || ''}">
                     <div class="product-card-info">
-                        <div class="product-card-name">${p.name}</div>
-                        <div class="product-card-meta">${p.barcode ? p.barcode : ''} ${p.category_name ? '· ' + p.category_name : ''}</div>
+                        <div class="product-card-name">${name}</div>
+                        <div class="product-card-meta">${meta}</div>
                     </div>
                     <div class="product-card-price">${Number(p.selling_price).toFixed(2)}</div>
                     <div class="product-card-actions">
@@ -2314,7 +2319,7 @@ const App = (() => {
                 const qty = 1;
                 const price = Number(p.selling_price);
                 const discount = 0;
-                const pname = p.name || p.product_name || 'Produit';
+                const pname = p.name || 'Produit';
 
                 if (cart[pid]) {
                     cart[pid].qty += qty;
@@ -2349,9 +2354,10 @@ const App = (() => {
                 const card = this.closest('.product-card');
                 if (!card) return;
                 const pid = card.dataset.pid;
-                const pname = card.dataset.name;
-                const price = parseFloat(card.dataset.price);
-                const tax = parseFloat(card.dataset.tax || '20');
+                const p = productMap[pid] || {};
+                const pname = p.name || card.dataset.name || 'Produit';
+                const price = parseFloat(p.selling_price || card.dataset.price);
+                const tax = parseFloat(p.tax_rate || card.dataset.tax || '20');
 
                 if (cart[pid]) {
                     cart[pid].qty += 1;
