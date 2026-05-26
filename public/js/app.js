@@ -2587,6 +2587,7 @@ const App = (() => {
                     userRoleIds = (userData.roles || []).map(r => r.id);
                 } catch (err) {
                     showToast(err.message || 'Échec du chargement de l\'utilisateur', 'error');
+                    return;
                 }
             }
 
@@ -2596,6 +2597,7 @@ const App = (() => {
             }).join('');
         } catch (err) {
             showToast(err.message || 'Échec du chargement des rôles', 'error');
+            return;
         }
 
         const modal = createModal({

@@ -1,4 +1,4 @@
-const CACHE = 'superma-v1';
+const CACHE = 'superma-v2';
 const PRECACHE = [
     '/',
     '/public/js/app.js',
