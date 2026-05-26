@@ -22,13 +22,13 @@ const App = (() => {
         { id: 'dashboard',  label: 'Tableau de bord', icon: '\u2302' },
         { id: 'products',   label: 'Produits',       icon: '\uD83D\uDCE6' },
         { id: 'categories', label: 'Catégories',     icon: '\uD83D\uDCC1' },
-        { id: 'customers',  label: 'Clients',        icon: '\uD83D\uDC65' },
-        { id: 'suppliers',  label: 'Fournisseurs',   icon: '\uD83D\uDE9A' },
-        { id: 'stock',      label: 'Stock',          icon: '\uD83D\uDCCA' },
-        { id: 'orders',     label: 'Commandes',      icon: '\uD83D\uDCE6' },
-        { id: 'sales',      label: 'Ventes',         icon: '\uD83D\uDCCB' },
+        { id: 'customers',  label: 'Clients',        icon: '\uD83D\uDC65', roles: ['manager', 'cashier'] },
+        { id: 'suppliers',  label: 'Fournisseurs',   icon: '\uD83D\uDE9A', roles: ['manager', 'stock_keeper'] },
+        { id: 'stock',      label: 'Stock',          icon: '\uD83D\uDCCA', roles: ['manager', 'stock_keeper'] },
+        { id: 'orders',     label: 'Commandes',      icon: '\uD83D\uDCE6', roles: ['manager', 'stock_keeper'] },
+        { id: 'sales',      label: 'Ventes',         icon: '\uD83D\uDCCB', roles: ['manager', 'cashier'] },
         { id: 'users',      label: 'Utilisateurs',   icon: '\uD83D\uDC64', adminOnly: true },
-        { id: 'stores',     label: 'Magasins',       icon: '\uD83C\uDFEA' },
+        { id: 'stores',     label: 'Magasins',       icon: '\uD83C\uDFEA', adminOnly: true },
         { id: 'logs',       label: 'Journaux',       icon: '\uD83D\uDCDD', adminOnly: true },
     ];
 
@@ -43,7 +43,14 @@ const App = (() => {
 
     function canView(item) {
         if (item.adminOnly) return isAdmin();
+        if (item.roles) return isAdmin() || item.roles.some(r => state.roles.includes(r));
         return true;
+    }
+
+    function getDefaultPage() {
+        if (state.roles.includes('cashier')) return 'sales';
+        if (state.roles.includes('stock_keeper')) return 'stock';
+        return 'dashboard';
     }
 
     function showToast(message, type = 'info') {
@@ -164,7 +171,7 @@ const App = (() => {
         state.permissions = auth.permissions;
 
         renderLayout();
-        navigate('dashboard');
+        navigate(getDefaultPage());
 
         document.getElementById('page-actions')?.addEventListener('click', e => {
             const btn = e.target.closest('.btn-export');
@@ -360,6 +367,8 @@ const App = (() => {
     }
 
     function navigate(view) {
+        const item = NAV_ITEMS.find(i => i.id === view);
+        if (item && !canView(item)) view = getDefaultPage();
         state.currentView = view;
         $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav === view));
         renderView(view);
@@ -2990,7 +2999,7 @@ const App = (() => {
                 state.roles = auth.roles;
                 state.permissions = auth.permissions;
                 renderLayout();
-                navigate('dashboard');
+                navigate(getDefaultPage());
             } else {
                 renderLogin();
             }
