@@ -2115,16 +2115,20 @@ const App = (() => {
             (prodRes.data.products || []).filter(p => p.is_active).forEach(p => {
                 if (p.barcode) barcodeMap[p.barcode] = p;
                 productRowsHtml += `
-                <tr>
-                    <td><strong>${p.name}</strong><br><small>${p.barcode || ''}</small></td>
-                    <td><input type="number" class="form-control item-qty" data-price="${p.selling_price}" data-pid="${p.id}" data-tax="${p.tax_rate}" value="1" min="0.001" step="0.001" style="width:80px;"></td>
-                    <td><input type="number" class="form-control item-price" value="${p.selling_price}" step="0.01" style="width:100px;"></td>
-                    <td><input type="number" class="form-control item-discount" value="0" min="0" max="100" step="0.1" style="width:70px;"></td>
-                    <td class="item-subtotal">${Number(p.selling_price).toFixed(2)}</td>
-                    <td><button type="button" class="btn btn-sm btn-success add-to-cart" data-pid="${p.id}" data-name="${p.name}" data-price="${p.selling_price}" data-tax="${p.tax_rate}">+</button></td>
-                </tr>`;
+                <div class="product-card" data-pid="${p.id}" data-name="${p.name}" data-price="${p.selling_price}" data-tax="${p.tax_rate}" data-barcode="${p.barcode || ''}">
+                    <div class="product-card-info">
+                        <div class="product-card-name">${p.name}</div>
+                        <div class="product-card-meta">${p.barcode ? p.barcode : ''} ${p.category_name ? '· ' + p.category_name : ''}</div>
+                    </div>
+                    <div class="product-card-price">${Number(p.selling_price).toFixed(2)}</div>
+                    <div class="product-card-actions">
+                        <button type="button" class="btn btn-sm btn-success add-to-cart" title="Ajouter au panier">+</button>
+                    </div>
+                </div>`;
             });
-        } catch (_) {}
+        } catch (err) {
+            showToast(err.message || 'Échec du chargement des produits', 'error');
+        }
 
         const modal = createModal({
             title: 'Nouvelle vente',
@@ -2139,7 +2143,17 @@ const App = (() => {
                     .barcode-scanner { display:flex; gap:8px; margin-bottom:8px; }
                     .barcode-scanner input { flex:1; font-size:1.1rem; letter-spacing:1px; }
                     .barcode-scanner .scanner-icon { font-size:1.3rem; line-height:38px; }
-                    @media (max-width:768px) { .sale-layout { grid-template-columns:1fr; } }
+                    .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; max-height:380px; overflow-y:auto; padding:4px; }
+                    .product-card { display:flex; flex-direction:column; padding:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-bg); cursor:pointer; transition:box-shadow .15s; }
+                    .product-card:hover { box-shadow:0 1px 6px rgba(0,0,0,0.1); border-color:var(--primary); }
+                    .product-card-info { flex:1; min-width:0; }
+                    .product-card-name { font-weight:600; font-size:0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                    .product-card-meta { font-size:0.65rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                    .product-card-price { font-size:0.9rem; font-weight:700; color:var(--primary); margin-top:4px; }
+                    .product-card-actions { margin-top:4px; }
+                    .product-card-actions .btn { width:100%; padding:2px 8px; font-size:0.75rem; }
+                    .product-card.hidden { display:none; }
+                    @media (max-width:768px) { .sale-layout { grid-template-columns:1fr; } .product-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
                 </style>
                 <div class="sale-layout">
                     <div>
@@ -2150,12 +2164,7 @@ const App = (() => {
                         <div class="toolbar" style="margin-bottom:8px;">
                             <input type="text" id="sale-search-product" class="form-control" placeholder="Rechercher des produits..." style="flex:1;">
                         </div>
-                        <div style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);">
-                            <table style="font-size:0.8rem;">
-                                <thead><tr><th>Produit</th><th>Qté</th><th>Prix</th><th>Rem%</th><th>Total</th><th></th></tr></thead>
-                                <tbody>${productRowsHtml || '<tr><td colspan="6" style="text-align:center;padding:20px;">Aucun produit disponible</td></tr>'}</tbody>
-                            </table>
-                        </div>
+                        <div class="product-grid" id="product-grid">${productRowsHtml || '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:0.85rem;">Aucun produit disponible</div>'}</div>
                     </div>
                     <div>
                         <div class="form-group">
@@ -2272,10 +2281,10 @@ const App = (() => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 const q = this.value.toLowerCase();
-                const rows = this.closest('.modal-body').querySelectorAll('table tbody tr');
-                rows.forEach(row => {
-                    const name = row.querySelector('td:first-child')?.textContent?.toLowerCase() || '';
-                    row.style.display = name.includes(q) ? '' : 'none';
+                document.querySelectorAll('.product-card').forEach(card => {
+                    const name = card.dataset.name?.toLowerCase() || '';
+                    const barcode = card.dataset.barcode?.toLowerCase() || '';
+                    card.classList.toggle('hidden', !(name.includes(q) || barcode.includes(q)));
                 });
             }, 300);
         });
@@ -2325,30 +2334,31 @@ const App = (() => {
             });
         }
 
+        document.querySelectorAll('.product-card').forEach(el => {
+            el.addEventListener('click', function(e) {
+                if (e.target.closest('.product-card-actions')) return;
+                const btn = this.querySelector('.add-to-cart');
+                if (btn) btn.click();
+            });
+        });
+
         document.querySelectorAll('.add-to-cart').forEach(el => {
-            el.addEventListener('click', function() {
-                const pid = this.dataset.pid;
-                const row = this.closest('tr');
-                const qty = parseFloat(row.querySelector('.item-qty')?.value || '1');
-                const price = parseFloat(row.querySelector('.item-price')?.value || this.dataset.price);
-                const discount = parseFloat(row.querySelector('.item-discount')?.value || '0');
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.product-card');
+                if (!card) return;
+                const pid = card.dataset.pid;
+                const pname = card.dataset.name;
+                const price = parseFloat(card.dataset.price);
+                const tax = parseFloat(card.dataset.tax || '20');
 
                 if (cart[pid]) {
-                    cart[pid].qty += qty;
-                    cart[pid].price = price;
-                    cart[pid].discount = discount;
+                    cart[pid].qty += 1;
                 } else {
-                    cart[pid] = {
-                        pid,
-                        name: this.dataset.name,
-                        qty,
-                        price,
-                        discount,
-                        tax: parseFloat(this.dataset.tax || '20'),
-                    };
+                    cart[pid] = { pid, name: pname, qty: 1, price, discount: 0, tax };
                 }
                 updateCart();
-                showToast(`${this.dataset.name} ajouté au panier`, 'success');
+                showToast(`${pname} ajouté au panier`, 'success');
             });
         });
 
