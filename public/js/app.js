@@ -2568,7 +2568,7 @@ const App = (() => {
         let userRoleIds = [];
 
         try {
-            const rolesRes = await API.getRoles({ with_permissions: 1 });
+            const rolesRes = await API.getRoles();
             const allRoles = rolesRes.data.roles || [];
 
             if (isEdit) {
@@ -2585,7 +2585,9 @@ const App = (() => {
                 const selected = isEdit && userRoleIds.includes(r.id) ? 'selected' : '';
                 return `<option value="${r.id}" ${selected}>${r.name}</option>`;
             }).join('');
-        } catch (_) {}
+        } catch (err) {
+            showToast(err.message || 'Échec du chargement des rôles', 'error');
+        }
 
         const modal = createModal({
             title: isEdit ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur',
