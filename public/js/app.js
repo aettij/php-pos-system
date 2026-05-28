@@ -840,9 +840,14 @@ const App = (() => {
             const body = document.getElementById('page-body');
 
             body.innerHTML = `
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" autofocus id="search-categories" placeholder="Rechercher des catégories...">
+                    </div>
+                </div>
                 <div class="grid-2" style="grid-template-columns: 1fr;">
                     <div class="table-container">
-                        <table>
+                        <table class="table-responsive-cards">
                             <thead>
                                 <tr>
                                     <th>Nom</th>
@@ -852,7 +857,7 @@ const App = (() => {
                                     <th style="text-align:right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="categories-table-body">
                                 ${(res.data.categories || []).map(c => `
                                     <tr>
                                         <td><strong>${c.name}</strong> ${c.color ? `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c.color};vertical-align:middle;"></span>` : ''}</td>
@@ -873,6 +878,13 @@ const App = (() => {
             `;
 
             document.getElementById('btn-add-category')?.addEventListener('click', () => editCategory());
+
+            document.getElementById('search-categories')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#categories-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+                });
+            });
 
             document.querySelectorAll('[data-edit-category]').forEach(el => {
                 el.addEventListener('click', () => editCategory(el.dataset.editCategory));
