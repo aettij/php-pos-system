@@ -601,12 +601,12 @@ const App = (() => {
             } catch (_) {}
 
             // Events
-            document.getElementById('search-products')?.addEventListener('input', debounce(e => {
-                renderProducts({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-products');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-products')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#products-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('filter-category')?.addEventListener('change', e => {
                 renderProducts({ ...params, category_id: e.target.value, page: 1 });
@@ -993,7 +993,7 @@ const App = (() => {
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="customers-table-body">
                             ${customers.map(c => `
                                 <tr>
                                     <td data-label="Nom"><strong>${c.first_name} ${c.last_name}</strong></td>
@@ -1020,12 +1020,12 @@ const App = (() => {
                 </div>` : ''}
             `;
 
-            document.getElementById('search-customers')?.addEventListener('input', debounce(e => {
-                renderCustomers({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-customers');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-customers')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#customers-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('btn-add-customer')?.addEventListener('click', () => editCustomer());
 
@@ -1189,7 +1189,7 @@ const App = (() => {
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="suppliers-table-body">
                             ${suppliers.map(s => `
                                 <tr>
                                     <td data-label="Société"><strong>${s.company_name}</strong></td>
@@ -1215,12 +1215,12 @@ const App = (() => {
                 </div>` : ''}
             `;
 
-            document.getElementById('search-suppliers')?.addEventListener('input', debounce(e => {
-                renderSuppliers({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-suppliers');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-suppliers')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#suppliers-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('btn-add-supplier')?.addEventListener('click', () => editSupplier());
 
@@ -1416,7 +1416,7 @@ const App = (() => {
                                 ${canAdjust ? '<th style="text-align:right">Actions</th>' : ''}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="stock-table-body">
                             ${products.map(p => {
                                 const statusClass = { 'ok': 'stock-ok', 'low_stock': 'stock-low', 'out_of_stock': 'stock-out', 'overstock': 'stock-over' }[p.stock_status] || '';
                                 const badgeClass = { 'ok': 'badge-success', 'low_stock': 'badge-warning', 'out_of_stock': 'badge-danger', 'overstock': 'badge-info' }[p.stock_status] || 'badge-gray';
@@ -1442,12 +1442,12 @@ const App = (() => {
                 </div>
             `;
 
-            document.getElementById('search-stock')?.addEventListener('input', debounce(e => {
-                renderStock({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-stock');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-stock')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#stock-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('filter-stock')?.addEventListener('change', e => {
                 renderStock({ ...params, filter: e.target.value });
@@ -1587,7 +1587,7 @@ const App = (() => {
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="orders-table-body">
                             ${orders.map(o => {
                                 const st = ORDER_STATUSES[o.status] || { label: o.status, badge: 'badge-gray' };
                                 return `
@@ -1617,12 +1617,12 @@ const App = (() => {
                 </div>` : ''}
             `;
 
-            document.getElementById('search-orders')?.addEventListener('input', debounce(e => {
-                renderOrders({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-orders');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-orders')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#orders-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('filter-order-status')?.addEventListener('change', e => {
                 renderOrders({ ...params, status: e.target.value, page: 1 });
@@ -1986,7 +1986,7 @@ const App = (() => {
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="sales-table-body">
                             ${sales.map(s => `
                                 <tr>
                                     <td data-label="N°"><strong>${s.sale_number}</strong></td>
@@ -2014,12 +2014,12 @@ const App = (() => {
                 </div>` : ''}
             `;
 
-            document.getElementById('search-sales')?.addEventListener('input', debounce(e => {
-                renderSales({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-sales');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-sales')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#sales-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('filter-sale-status')?.addEventListener('change', e => {
                 renderSales({ ...params, status: e.target.value, page: 1 });
@@ -2511,7 +2511,7 @@ const App = (() => {
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="users-table-body">
                             ${users.map(u => `
                                 <tr>
                                     <td><strong>${u.first_name} ${u.last_name}</strong></td>
@@ -2539,12 +2539,12 @@ const App = (() => {
                 </div>` : ''}
             `;
 
-            document.getElementById('search-users')?.addEventListener('input', debounce(e => {
-                renderUsers({ ...params, search: e.target.value, page: 1 }).then(() => {
-                    const inp = document.getElementById('search-users');
-                    if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+            document.getElementById('search-users')?.addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('#users-table-body tr').forEach(row => {
+                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
                 });
-            }, 400));
+            });
 
             document.getElementById('btn-add-user')?.addEventListener('click', () => editUser());
 
