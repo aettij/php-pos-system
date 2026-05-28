@@ -1733,7 +1733,7 @@ const App = (() => {
 
         try {
             const [suppRes, prodRes] = await Promise.all([
-                API.getSuppliers({ per_page: 200, is_active: 1 }),
+                API.getSuppliers({ per_page: 200 }),
                 API.getProducts({ per_page: 500 }),
             ]);
 
@@ -1760,7 +1760,9 @@ const App = (() => {
                     </tr>
                 `).join('');
             }
-        } catch (_) {}
+        } catch (err) {
+            console.error('Order form data load failed', err);
+        }
 
         const modal = createModal({
             title: isEdit ? 'Modifier la commande' : 'Nouvelle commande',
