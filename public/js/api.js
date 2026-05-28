@@ -46,12 +46,11 @@ const API = (() => {
         try {
             const response = await fetch(url, config);
 
+            const text = await response.text();
             let data;
             try {
-                data = await response.json();
+                data = JSON.parse(text);
             } catch (_) {
-                // Response is not JSON — try to read as text for debugging
-                const text = await response.text();
                 const error = new Error(text.slice(0, 500) || `HTTP ${response.status} (non-JSON response)`);
                 error.status = response.status;
                 error.data = { raw: text.slice(0, 1000) };
