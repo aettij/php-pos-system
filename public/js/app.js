@@ -1732,10 +1732,8 @@ const App = (() => {
         let allProducts = [];
 
         try {
-            const [suppRes, prodRes] = await Promise.all([
-                API.getSuppliers({ per_page: 200 }),
-                API.getProducts({ per_page: 500 }),
-            ]);
+            const suppRes = await API.getSuppliers({ per_page: 200 });
+            const prodRes = await API.getProducts({ per_page: 500 });
 
             supplierOptions += (suppRes.data.suppliers || []).map(s =>
                 `<option value="${s.id}">${s.company_name}${s.contact_name ? ` (${s.contact_name})` : ''}</option>`

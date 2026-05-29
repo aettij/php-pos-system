@@ -97,6 +97,8 @@ final class Auth
 
         $_SESSION['expires_at'] = time() + (int)(getenv('SESSION_LIFETIME') ?: 7200);
 
+        session_write_close();
+
         return self::$currentUser;
     }
 
