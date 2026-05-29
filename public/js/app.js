@@ -1762,6 +1762,7 @@ const App = (() => {
             }
         } catch (err) {
             console.error('Order form data load failed', err);
+            showToast(err.message || 'Échec du chargement des données', 'error');
         }
 
         const modal = createModal({
