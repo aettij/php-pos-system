@@ -2090,7 +2090,7 @@ const App = (() => {
                         </div>
                         <div>
                             <div class="detail-row"><span class="detail-label">Sous-total</span><span class="detail-value">${Number(s.subtotal).toFixed(2)} MAD</span></div>
-                            <div class="detail-row"><span class="detail-label">Remise</span><span class="detail-value">-${Number(s.discount_amount).toFixed(2)} MAD</span></div>
+                            <div class="detail-row"><span class="detail-label">Avence</span><span class="detail-value">-${Number(s.discount_amount).toFixed(2)} MAD</span></div>
                             <div class="detail-row"><span class="detail-label">Total</span><span class="detail-value"><strong>${Number(s.total_amount).toFixed(2)} MAD</strong></span></div>
                             <div class="detail-row"><span class="detail-label">Payé</span><span class="detail-value">${Number(s.paid_amount).toFixed(2)} MAD</span></div>
                             <div class="detail-row"><span class="detail-label">Monnaie</span><span class="detail-value">${Number(s.change_amount).toFixed(2)} MAD</span></div>
@@ -2257,7 +2257,7 @@ const App = (() => {
                         </div>
                         <div style="margin-top:8px;">
                             <div class="detail-row"><span class="detail-label">Sous-total</span><span class="detail-value" id="cart-subtotal">0.00</span></div>
-                            <div class="detail-row"><span class="detail-label">Remise</span><span class="detail-value">
+                            <div class="detail-row"><span class="detail-label">Avence</span><span class="detail-value">
                                 <input type="number" id="cart-discount" value="0" step="0.01" class="form-control" style="width:100px;text-align:right;display:inline;">
                             </span></div>
                             <div class="cart-total" style="margin-top:8px;">
@@ -2429,7 +2429,7 @@ const App = (() => {
             const discount = parseFloat(document.getElementById('cart-discount')?.value || '0');
 
             if (discount > subtotal) {
-                showToast('La remise ne peut pas dépasser le sous-total', 'warning');
+                showToast('L\'avence ne peut pas dépasser le sous-total', 'warning');
                 return;
             }
 
