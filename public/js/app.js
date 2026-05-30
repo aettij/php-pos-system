@@ -1486,7 +1486,10 @@ const App = (() => {
                 productOptions = (res.data.products || []).map(p =>
                     `<option value="${p.id}">${p.name} (${p.barcode || 'sans code-barres'})</option>`
                 ).join('');
-            } catch (_) {}
+            } catch (err) {
+                console.error('Stock adjust products load failed', err);
+                showToast(err.message || 'Échec du chargement des produits', 'error');
+            }
         }
 
         const modal = createModal({
