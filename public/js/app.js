@@ -1465,7 +1465,7 @@ const App = (() => {
                 renderStock({ ...params, filter: e.target.value });
             });
 
-            document.getElementById('btn-adjust-stock')?.addEventListener('click', adjustStock);
+            document.getElementById('btn-adjust-stock')?.addEventListener('click', () => adjustStock());
 
             document.querySelectorAll('[data-adjust-stock]').forEach(el => {
                 el.addEventListener('click', () => adjustStock(el.dataset.adjustStock, el.dataset.name));
