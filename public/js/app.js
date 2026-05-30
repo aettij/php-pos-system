@@ -400,6 +400,18 @@ const App = (() => {
         setPageActions('');
         if (showLoader) showLoading(true);
 
+        if (!isAdmin()) {
+            const body = document.getElementById('page-body');
+            body.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
+                    <div style="font-size:5rem;margin-bottom:16px;line-height:1;">🏪</div>
+                    <h1 style="font-size:2rem;margin-bottom:4px;">SuperMa</h1>
+                    <p style="color:var(--text-secondary);font-size:1.1rem;">${state.user.first_name} ${state.user.last_name}</p>
+                </div>
+            `;
+            return;
+        }
+
         try {
             const res = await API.getDashboard();
             const d = res.data;
