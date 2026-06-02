@@ -357,8 +357,17 @@ const App = (() => {
         const url = `/api/sse?token=${encodeURIComponent(token)}`;
         state.sse = new EventSource(url);
         state.sse.addEventListener('refresh', () => {
-            if (state.currentView === 'dashboard') {
-                renderDashboard(false);
+            switch (state.currentView) {
+                case 'dashboard': renderDashboard(false); break;
+                case 'stock': renderStock(); break;
+                case 'products': renderProducts(); break;
+                case 'sales': renderSales(); break;
+                case 'orders': renderOrders(); break;
+                case 'customers': renderCustomers(); break;
+                case 'suppliers': renderSuppliers(); break;
+                case 'categories': renderCategories(); break;
+                case 'users': renderUsers(); break;
+                case 'stores': renderStores(); break;
             }
         });
         state.sse.addEventListener('connected', () => {});
@@ -379,7 +388,7 @@ const App = (() => {
         state.currentView = view;
         $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav === view));
         renderView(view);
-        if (view === 'dashboard' && !state.sse) {
+        if (!state.sse) {
             connectSSE();
         }
     }

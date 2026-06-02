@@ -226,6 +226,16 @@ switch ($method) {
                 VALUES (:sale_id, :product_id, :quantity, :unit_price, :purchase_price, :discount_pct, :tax_rate)
             ');
 
+            $stockStmt = $db->prepare('
+                UPDATE products SET stock_quantity = stock_quantity - :qty, updated_at = NOW()
+                WHERE id = :product_id AND is_service = FALSE
+            ');
+
+            $movementStmt = $db->prepare('
+                INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
+                VALUES (:product_id, :store_id, :user_id, \'sale\', :qty, :unit_cost, :reference_id, \'sale\', :notes)
+            ');
+
             foreach ($items as $item) {
                 $itemStmt->execute([
                     ':sale_id'        => $sale['id'],
@@ -235,6 +245,21 @@ switch ($method) {
                     ':purchase_price' => $item['purchase_price'],
                     ':discount_pct'   => $item['discount_pct'],
                     ':tax_rate'       => $item['tax_rate'],
+                ]);
+
+                $stockStmt->execute([
+                    ':qty'        => $item['quantity'],
+                    ':product_id' => $item['product_id'],
+                ]);
+
+                $movementStmt->execute([
+                    ':product_id'   => $item['product_id'],
+                    ':store_id'     => $user['store_id'],
+                    ':user_id'      => $user['id'],
+                    ':qty'          => -$item['quantity'],
+                    ':unit_cost'    => $item['purchase_price'],
+                    ':reference_id' => $sale['id'],
+                    ':notes'        => 'Vente ' . ($sale['sale_number'] ?? ''),
                 ]);
             }
 
