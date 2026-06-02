@@ -296,6 +296,39 @@ switch ($method) {
                 ');
                 $updateStmt->execute([':order_id' => $orderId]);
 
+                // Get order items to update stock
+                $itemsStmt = $db->prepare('
+                    SELECT product_id, ordered_qty FROM purchase_order_items WHERE order_id = :order_id
+                ');
+                $itemsStmt->execute([':order_id' => $orderId]);
+                $orderItems = $itemsStmt->fetchAll();
+
+                $stockStmt = $db->prepare('
+                    UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW()
+                    WHERE id = :product_id AND is_service = FALSE
+                ');
+
+                $movementStmt = $db->prepare('
+                    INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
+                    VALUES (:product_id, :store_id, :user_id, \'purchase\', :qty, NULL, :reference_id, \'purchase_order\', :notes)
+                ');
+
+                foreach ($orderItems as $oi) {
+                    $stockStmt->execute([
+                        ':qty'        => $oi['ordered_qty'],
+                        ':product_id' => $oi['product_id'],
+                    ]);
+
+                    $movementStmt->execute([
+                        ':product_id'   => $oi['product_id'],
+                        ':store_id'     => $storeId,
+                        ':user_id'      => $user['id'],
+                        ':qty'          => $oi['ordered_qty'],
+                        ':reference_id' => $orderId,
+                        ':notes'        => 'Réception commande ' . ($order['order_number'] ?? ''),
+                    ]);
+                }
+
                 $db->commit();
 
                 jsonSuccess($order, 'Order received');
