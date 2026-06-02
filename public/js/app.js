@@ -2303,7 +2303,6 @@ const App = (() => {
         // Cart logic
         const cart = {};
         let searchTimeout;
-        let prevCartQty = {};
 
         function updateStockBadges() {
             document.querySelectorAll('.product-card').forEach(card => {
@@ -2415,8 +2414,9 @@ const App = (() => {
                 const discount = 0;
                 const pname = p.name || 'Produit';
                 const stockQty = Number(p.stock_quantity);
+                const qtyInCart = Object.values(cart).reduce((sum, i) => i.pid === pid ? sum + i.qty : sum, 0);
 
-                if (!p.is_service && stockQty <= 0) {
+                if (!p.is_service && stockQty - qtyInCart <= 0) {
                     showToast(`${pname} : stock épuisé`, 'error');
                     this.value = '';
                     this.focus();
@@ -2461,8 +2461,9 @@ const App = (() => {
                 const price = parseFloat(p.selling_price || card.dataset.price);
                 const tax = parseFloat(p.tax_rate || card.dataset.tax || '20');
                 const stockQty = Number(p.stock_quantity);
+                const qtyInCart = Object.values(cart).reduce((sum, i) => i.pid === pid ? sum + i.qty : sum, 0);
 
-                if (!p.is_service && stockQty <= 0) {
+                if (!p.is_service && stockQty - qtyInCart <= 0) {
                     showToast(`${pname} : stock épuisé`, 'error');
                     return;
                 }
