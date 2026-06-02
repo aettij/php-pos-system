@@ -2384,6 +2384,14 @@ const App = (() => {
                 const price = Number(p.selling_price);
                 const discount = 0;
                 const pname = p.name || 'Produit';
+                const stockQty = Number(p.stock_quantity);
+
+                if (!p.is_service && stockQty <= 0) {
+                    showToast(`${pname} : stock épuisé`, 'error');
+                    this.value = '';
+                    this.focus();
+                    return;
+                }
 
                 if (cart[pid]) {
                     cart[pid].qty += qty;
@@ -2422,6 +2430,12 @@ const App = (() => {
                 const pname = p.name || card.dataset.name || 'Produit';
                 const price = parseFloat(p.selling_price || card.dataset.price);
                 const tax = parseFloat(p.tax_rate || card.dataset.tax || '20');
+                const stockQty = Number(p.stock_quantity);
+
+                if (!p.is_service && stockQty <= 0) {
+                    showToast(`${pname} : stock épuisé`, 'error');
+                    return;
+                }
 
                 if (cart[pid]) {
                     cart[pid].qty += 1;
