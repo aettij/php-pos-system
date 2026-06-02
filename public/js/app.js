@@ -2303,6 +2303,34 @@ const App = (() => {
         // Cart logic
         const cart = {};
         let searchTimeout;
+        let prevCartQty = {};
+
+        function updateStockBadges() {
+            document.querySelectorAll('.product-card').forEach(card => {
+                const pid = card.dataset.pid;
+                const p = productMap[pid];
+                if (!p) return;
+                const stockQty = Number(p.stock_quantity);
+                const stockMin = Number(p.stock_min);
+                const qtyInCart = Object.values(cart).reduce((sum, i) => i.pid === pid ? sum + i.qty : sum, 0);
+                const remaining = stockQty - qtyInCart;
+                const badge = card.querySelector('.stock-badge');
+                if (!badge) return;
+                badge.textContent = remaining <= 0 ? '0' : remaining.toFixed(0);
+                badge.className = 'stock-badge';
+                if (remaining <= 0) {
+                    badge.classList.add('stock-out');
+                } else if (remaining <= stockMin) {
+                    badge.classList.add('stock-low');
+                } else {
+                    badge.classList.add('stock-ok');
+                }
+                const btn = card.querySelector('.add-to-cart');
+                if (btn) {
+                    btn.disabled = !p.is_service && remaining <= 0;
+                }
+            });
+        }
 
         function updateCart() {
             const container = document.getElementById('cart-items');
@@ -2313,6 +2341,7 @@ const App = (() => {
                 container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:0.85rem;">Ajoutez des produits depuis la liste</div>';
                 document.getElementById('cart-subtotal').textContent = '0.00';
                 document.getElementById('cart-total').textContent = '0.00';
+                updateStockBadges();
                 return;
             }
 
@@ -2345,6 +2374,7 @@ const App = (() => {
                     updateCart();
                 });
             });
+            updateStockBadges();
         }
 
         document.getElementById('sale-search-product')?.addEventListener('input', function() {
@@ -2547,6 +2577,8 @@ const App = (() => {
                 btn.textContent = 'Finaliser la vente';
             }
         });
+
+        updateStockBadges();
     }
 
     // --- Users (Admin only) ---
