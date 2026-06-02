@@ -176,7 +176,14 @@ const App = (() => {
         document.getElementById('page-actions')?.addEventListener('click', e => {
             const btn = e.target.closest('.btn-export');
             if (btn) {
-                API.exportData(btn.dataset.exportType).catch(err => showToast(err.message, 'error'));
+                btn.disabled = true;
+                btn.textContent = 'Export en cours...';
+                API.exportData(btn.dataset.exportType)
+                    .catch(err => showToast(err.message, 'error'))
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.textContent = 'Exporter';
+                    });
             }
         });
 
@@ -2157,16 +2164,31 @@ const App = (() => {
                 if (p.barcode) barcodeMap[p.barcode] = p;
                 const name = p.name.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const meta = (p.barcode ? p.barcode : '') + (p.barcode && p.category_name ? ' &middot; ' : '') + (p.category_name ? p.category_name.replace(/"/g, '&quot;') : '');
+                const stockQty = Number(p.stock_quantity);
+                const stockMin = Number(p.stock_min);
+                let stockBadge = '';
+                if (p.is_service) {
+                    stockBadge = `<span class="stock-badge stock-service">Service</span>`;
+                } else if (stockQty <= 0) {
+                    stockBadge = `<span class="stock-badge stock-out">${stockQty.toFixed(0)}</span>`;
+                } else if (stockQty <= stockMin) {
+                    stockBadge = `<span class="stock-badge stock-low">${stockQty.toFixed(0)}</span>`;
+                } else {
+                    stockBadge = `<span class="stock-badge stock-ok">${stockQty.toFixed(0)}</span>`;
+                }
                 productRowsHtml += `
                 <div class="product-card" data-pid="${p.id}" data-name="${name}" data-price="${p.selling_price}" data-tax="${p.tax_rate}" data-barcode="${p.barcode || ''}">
                     <div class="product-card-info">
                         <div class="product-card-name">${name}</div>
                         <div class="product-card-meta">${meta}</div>
                     </div>
-                    <div class="product-card-price">${Number(p.selling_price).toFixed(2)}</div>
-                    <div class="product-card-actions">
-                        <button type="button" class="btn btn-sm btn-success add-to-cart" title="Ajouter au panier">+</button>
+                    <div class="product-card-footer">
+                        <div class="product-card-price">${Number(p.selling_price).toFixed(2)}</div>
+                        <div class="product-card-actions">
+                            <button type="button" class="btn btn-sm btn-success add-to-cart" title="Ajouter au panier">+</button>
+                        </div>
                     </div>
+                    ${stockBadge}
                 </div>`;
             });
         } catch (err) {
@@ -2188,15 +2210,21 @@ const App = (() => {
                     .barcode-scanner input { flex:1; font-size:1.1rem; letter-spacing:1px; }
                     .barcode-scanner .scanner-icon { font-size:1.3rem; line-height:38px; }
                     .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; max-height:380px; overflow-y:auto; padding:4px; }
-                    .product-card { display:flex; flex-direction:column; padding:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-bg); cursor:pointer; transition:box-shadow .15s; }
+                    .product-card { display:flex; flex-direction:column; padding:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-bg); cursor:pointer; transition:box-shadow .15s; position:relative; }
                     .product-card:hover { box-shadow:0 1px 6px rgba(0,0,0,0.1); border-color:var(--primary); }
                     .product-card-info { flex:1; min-width:0; }
                     .product-card-name { font-weight:600; font-size:0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
                     .product-card-meta { font-size:0.65rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-                    .product-card-price { font-size:0.9rem; font-weight:700; color:var(--primary); margin-top:4px; }
-                    .product-card-actions { margin-top:4px; }
-                    .product-card-actions .btn { width:100%; padding:2px 8px; font-size:0.75rem; }
+                    .product-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+                    .product-card-price { font-size:0.9rem; font-weight:700; color:var(--primary); }
+                    .product-card-actions { }
+                    .product-card-actions .btn { padding:2px 8px; font-size:0.75rem; }
                     .product-card.hidden { display:none; }
+                    .stock-badge { position:absolute; top:4px; right:4px; font-size:0.6rem; font-weight:700; padding:1px 5px; border-radius:8px; color:#fff; line-height:1.4; }
+                    .stock-badge.stock-ok { background:#16a34a; }
+                    .stock-badge.stock-low { background:#dc2626; }
+                    .stock-badge.stock-out { background:#dc2626; }
+                    .stock-badge.stock-service { background:#6b7280; }
                     @media (max-width:768px) { .sale-layout { grid-template-columns:1fr; } .product-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
                 </style>
                 <div class="sale-layout">

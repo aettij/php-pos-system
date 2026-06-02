@@ -15,12 +15,18 @@ if (!in_array($type, $allowed, true)) {
     jsonError('Invalid export type', 400);
 }
 
+$exportLimit = min(5000, max(1, (int)($_GET['limit'] ?? 5000)));
+$exportOffset = max(0, (int)($_GET['offset'] ?? 0));
+
 $writer = new XlsxWriter();
 
 switch ($type) {
     case 'customers':
-        $stmt = $db->prepare('SELECT * FROM customers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY first_name, last_name');
-        $stmt->execute([':store_id' => $user['store_id']]);
+        $stmt = $db->prepare('SELECT * FROM customers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY first_name, last_name LIMIT :limit OFFSET :offset');
+        $stmt->bindValue(':store_id', $user['store_id']);
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Customers', [
             'id'         => 'ID',
@@ -34,8 +40,11 @@ switch ($type) {
         break;
 
     case 'suppliers':
-        $stmt = $db->prepare('SELECT * FROM suppliers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY company_name');
-        $stmt->execute([':store_id' => $user['store_id']]);
+        $stmt = $db->prepare('SELECT * FROM suppliers WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY company_name LIMIT :limit OFFSET :offset');
+        $stmt->bindValue(':store_id', $user['store_id']);
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Suppliers', [
             'id'           => 'ID',
@@ -49,7 +58,9 @@ switch ($type) {
         break;
 
     case 'stores':
-        $stmt = $db->prepare('SELECT * FROM stores ORDER BY name');
+        $stmt = $db->prepare('SELECT * FROM stores ORDER BY name LIMIT :limit OFFSET :offset');
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Stores', [
@@ -73,7 +84,10 @@ switch ($type) {
             LEFT JOIN roles r ON r.id = ur.role_id
             GROUP BY u.id, s.name
             ORDER BY u.first_name, u.last_name
+            LIMIT :limit OFFSET :offset
         ');
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Users', [
@@ -97,8 +111,12 @@ switch ($type) {
             LEFT JOIN suppliers s ON s.id = p.supplier_id
             WHERE (p.store_id = :store_id OR p.store_id IS NULL)
             ORDER BY p.name
+            LIMIT :limit OFFSET :offset
         ');
-        $stmt->execute([':store_id' => $user['store_id']]);
+        $stmt->bindValue(':store_id', $user['store_id']);
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Products', [
             'id'              => 'ID',
@@ -121,8 +139,11 @@ switch ($type) {
         break;
 
     case 'categories':
-        $stmt = $db->prepare('SELECT * FROM categories WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY name');
-        $stmt->execute([':store_id' => $user['store_id']]);
+        $stmt = $db->prepare('SELECT * FROM categories WHERE (store_id = :store_id OR store_id IS NULL) ORDER BY name LIMIT :limit OFFSET :offset');
+        $stmt->bindValue(':store_id', $user['store_id']);
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Categories', [
             'id'          => 'ID',
@@ -152,8 +173,12 @@ switch ($type) {
             WHERE (s.store_id = :store_id OR s.store_id IS NULL)
             GROUP BY DATE(s.sale_date)
             ORDER BY sale_date DESC
+            LIMIT :limit OFFSET :offset
         ");
-        $stmt->execute([':store_id' => $user['store_id']]);
+        $stmt->bindValue(':store_id', $user['store_id']);
+        $stmt->bindValue(':limit', $exportLimit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $exportOffset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $writer->addSheet('Sales by Day', [
             'sale_date'     => 'Date',

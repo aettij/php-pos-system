@@ -42,10 +42,11 @@ class XlsxWriter
 
     public function output(string $filename): void
     {
+        $zip = $this->toZip();
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($this->toZip()));
-        echo $this->toZip();
+        header('Content-Length: ' . strlen($zip));
+        echo $zip;
         exit;
     }
 

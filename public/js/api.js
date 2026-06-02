@@ -409,11 +409,12 @@ const API = (() => {
 
         // Export
         async exportData(type) {
-            const url = `${BASE}/export?type=${type}`;
+            const url = `${BASE}/export?type=${type}&limit=5000`;
             const token = getToken();
             const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
             });
             if (!response.ok) {
