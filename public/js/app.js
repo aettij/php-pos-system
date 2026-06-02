@@ -2167,9 +2167,7 @@ const App = (() => {
                 const stockQty = Number(p.stock_quantity);
                 const stockMin = Number(p.stock_min);
                 let stockBadge = '';
-                if (p.is_service) {
-                    stockBadge = `<span class="stock-badge stock-service">Service</span>`;
-                } else if (stockQty <= 0) {
+                if (stockQty <= 0) {
                     stockBadge = `<span class="stock-badge stock-out">${stockQty.toFixed(0)}</span>`;
                 } else if (stockQty <= stockMin) {
                     stockBadge = `<span class="stock-badge stock-low">${stockQty.toFixed(0)}</span>`;
@@ -2224,7 +2222,7 @@ const App = (() => {
                     .stock-badge.stock-ok { background:#16a34a; }
                     .stock-badge.stock-low { background:#dc2626; }
                     .stock-badge.stock-out { background:#dc2626; }
-                    .stock-badge.stock-service { background:#6b7280; }
+
                     @media (max-width:768px) { .sale-layout { grid-template-columns:1fr; } .product-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
                 </style>
                 <div class="sale-layout">
