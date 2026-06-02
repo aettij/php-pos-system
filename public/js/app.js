@@ -359,7 +359,11 @@ const App = (() => {
         state.sse.addEventListener('refresh', () => {
             switch (state.currentView) {
                 case 'dashboard': renderDashboard(false); break;
-                case 'stock': renderStock(); break;
+                case 'stock': {
+                    const f = document.getElementById('filter-stock');
+                    renderStock(f && f.value !== 'all' ? { filter: f.value } : {});
+                    break;
+                }
                 case 'products': renderProducts(); break;
                 case 'sales': renderSales(); break;
                 case 'orders': renderOrders(); break;
