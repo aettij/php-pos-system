@@ -31,9 +31,9 @@ $storeClause = '(store_id = :store_id OR store_id IS NULL)';
 $stmt = $db->prepare("
     SELECT
         COUNT(*) FILTER (WHERE is_active = TRUE)::INT AS total_products,
-        COUNT(*) FILTER (WHERE is_active = TRUE AND is_service = FALSE AND stock_quantity <= stock_min AND stock_quantity > 0)::INT AS low_stock,
-        COUNT(*) FILTER (WHERE is_active = TRUE AND is_service = FALSE AND stock_quantity <= 0)::INT AS out_of_stock,
-        COALESCE(SUM(stock_quantity * purchase_price) FILTER (WHERE is_active = TRUE AND is_service = FALSE), 0) AS stock_value
+        COUNT(*) FILTER (WHERE is_active = TRUE AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL) AND stock_quantity <= stock_min AND stock_quantity > 0)::INT AS low_stock,
+        COUNT(*) FILTER (WHERE is_active = TRUE AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL) AND stock_quantity <= 0)::INT AS out_of_stock,
+        COALESCE(SUM(stock_quantity * purchase_price) FILTER (WHERE is_active = TRUE AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)), 0) AS stock_value
     FROM products
     WHERE $storeClause
 ");

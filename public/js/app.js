@@ -2584,6 +2584,7 @@ const App = (() => {
                 markMutated();
                 renderSales();
             } catch (err) {
+                console.error('Sale failed:', err);
                 showToast(err.message || 'Échec de la création de la vente', 'error');
                 const cardError = document.getElementById('stripe-card-error');
                 if (cardError) { cardError.textContent = err.message || 'Erreur de paiement'; cardError.style.display = ''; }

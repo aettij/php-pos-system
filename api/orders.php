@@ -305,7 +305,7 @@ switch ($method) {
 
                 $stockStmt = $db->prepare('
                     UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW()
-                    WHERE id = :product_id AND (is_service = FALSE OR is_service IS NULL)
+                    WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)
                 ');
 
                 $movementStmt = $db->prepare('
