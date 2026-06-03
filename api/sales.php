@@ -183,6 +183,7 @@ switch ($method) {
                     'purchase_price' => (float)$product['purchase_price'],
                     'discount_pct'   => $discount,
                     'tax_rate'       => $tax,
+                    'is_service'     => (bool)$product['is_service'],
                 ];
             }
 
@@ -252,6 +253,9 @@ switch ($method) {
                     ':product_id' => $item['product_id'],
                 ]);
                 $affected = $stockStmt->rowCount();
+                if ($affected === 0 && !$item['is_service']) {
+                    throw new \RuntimeException("Stock decrement failed for product {$item['product_id']} — product not found or is_service flag mismatch");
+                }
                 Logger::debug('Stock decrement', [
                     'product_id' => $item['product_id'],
                     'qty'        => $item['quantity'],

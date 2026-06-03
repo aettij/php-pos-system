@@ -716,7 +716,7 @@ const App = (() => {
 
     async function editProduct(id = null) {
         const isEdit = !!id;
-        let product = { name: '', barcode: '', sku: '', selling_price: '', purchase_price: '0', tax_rate: '20', stock_quantity: '0', stock_min: '5', unit: 'piece', description: '', category_id: '', supplier_id: '', is_service: '0', allow_negative_stock: '0' };
+        let product = { name: '', barcode: '', sku: '', selling_price: '', purchase_price: '0', tax_rate: '20', stock_quantity: '0', stock_min: '5', unit: 'piece', description: '', category_id: '', supplier_id: '', is_service: false, allow_negative_stock: false };
 
         if (isEdit) {
             try {
