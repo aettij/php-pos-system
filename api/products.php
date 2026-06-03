@@ -108,12 +108,12 @@ switch ($method) {
                 store_id, category_id, supplier_id, name, description,
                 barcode, sku, unit, purchase_price, selling_price,
                 tax_rate, stock_quantity, stock_min, stock_max,
-                image_url, is_service, allow_negative_stock
+                image_url, is_active, is_service, allow_negative_stock
             ) VALUES (
                 :store_id, :category_id, :supplier_id, :name, :description,
                 :barcode, :sku, :unit, :purchase_price, :selling_price,
                 :tax_rate, :stock_quantity, :stock_min, :stock_max,
-                :image_url, :is_service, :allow_negative_stock
+                :image_url, :is_active, :is_service, :allow_negative_stock
             ) RETURNING *
         ');
 
@@ -133,6 +133,7 @@ switch ($method) {
             ':stock_min'           => (float)($input['stock_min'] ?? 5),
             ':stock_max'           => isset($input['stock_max']) ? (float)$input['stock_max'] : null,
             ':image_url'           => filter_var($input['image_url'] ?? '', FILTER_SANITIZE_URL) ?: null,
+            ':is_active'           => true,
             ':is_service'          => (bool)($input['is_service'] ?? false),
             ':allow_negative_stock' => (bool)($input['allow_negative_stock'] ?? false),
         ]);
