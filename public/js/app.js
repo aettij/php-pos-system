@@ -2271,10 +2271,10 @@ const App = (() => {
 
         const modal = createModal({
             title: 'Nouvelle vente',
-            size: 'modal-lg',
+            size: 'modal-fullscreen',
             content: `
                 <style>
-                    .sale-layout { display:grid; grid-template-columns:1fr 380px; gap:16px; }
+                    .sale-layout { display:grid; grid-template-columns:1fr 380px; gap:16px; height:calc(100vh - 130px); }
                     .cart-items { max-height:300px; overflow-y:auto; }
                     .cart-item { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
                     .cart-item-qty { width:60px; text-align:center; }
@@ -2282,7 +2282,7 @@ const App = (() => {
                     .barcode-scanner { display:flex; gap:8px; margin-bottom:8px; }
                     .barcode-scanner input { flex:1; font-size:1.1rem; letter-spacing:1px; }
                     .barcode-scanner .scanner-icon { font-size:1.3rem; line-height:38px; }
-                    .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; max-height:380px; overflow-y:auto; padding:4px; }
+                    .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; max-height:100%; overflow-y:auto; padding:4px; }
                     .product-card { display:flex; flex-direction:column; padding:8px; border:1px solid var(--border); border-radius:var(--radius); background:var(--card-bg); cursor:pointer; transition:box-shadow .15s; position:relative; }
                     .product-card:hover { box-shadow:0 1px 6px rgba(0,0,0,0.1); border-color:var(--primary); }
                     .product-card-info { flex:1; min-width:0; }
