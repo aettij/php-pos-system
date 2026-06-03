@@ -8,9 +8,15 @@ require_once __DIR__ . '/../includes/docx.php';
 $user = Auth::requireAuth();
 $method = $_SERVER['REQUEST_METHOD'];
 $saleId = $_GET['id'] ?? null;
+$saleIds = isset($_GET['ids']) ? array_filter(array_map('trim', explode(',', $_GET['ids']))) : [];
 
 if ($saleId && !validateUuid($saleId)) {
     jsonError('Invalid sale ID', 400);
+}
+foreach ($saleIds as $sid) {
+    if (!validateUuid($sid)) {
+        jsonError("Invalid sale ID: $sid", 400);
+    }
 }
 
 $db = Database::connect();
@@ -312,8 +318,9 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        if (!$saleId) {
-            jsonError('Sale ID is required', 400);
+        $ids = $saleIds ?: ($saleId ? [$saleId] : []);
+        if (empty($ids)) {
+            jsonError('Sale ID(s) required', 400);
         }
 
         Auth::requirePermission('sales.delete');
@@ -321,57 +328,43 @@ switch ($method) {
         try {
             $db->beginTransaction();
 
-            // Get sale items to restore stock
-            $itemsStmt = $db->prepare('
-                SELECT product_id, quantity FROM sale_items WHERE sale_id = :sale_id
-            ');
-            $itemsStmt->execute([':sale_id' => $saleId]);
-            $items = $itemsStmt->fetchAll();
+            $itemsStmt = $db->prepare('SELECT product_id, quantity FROM sale_items WHERE sale_id = :sale_id');
+            $restoreStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW() WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)");
+            $movementStmt = $db->prepare('INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes) VALUES (:product_id, :store_id, :user_id, \'return\', :qty, NULL, :reference_id, \'sale_cancellation\', :notes)');
+            $checkStmt = $db->prepare('SELECT id FROM sales WHERE id = :id AND status = \'completed\'');
+            $delItemsStmt = $db->prepare('DELETE FROM sale_items WHERE sale_id = :sale_id');
+            $delMovementsStmt = $db->prepare('DELETE FROM stock_movements WHERE reference_id = :ref AND reference_type = \'sale\'');
+            $delSaleStmt = $db->prepare('DELETE FROM sales WHERE id = :id');
 
-            if (empty($items)) {
-                jsonError('Sale has no items', 404);
+            $deleted = 0;
+            foreach ($ids as $id) {
+                $checkStmt->execute([':id' => $id]);
+                if (!$checkStmt->fetch()) continue;
+
+                // Restore stock
+                $itemsStmt->execute([':sale_id' => $id]);
+                foreach ($itemsStmt->fetchAll() as $item) {
+                    $restoreStmt->execute([':qty' => $item['quantity'], ':product_id' => $item['product_id']]);
+                    $movementStmt->execute([':product_id' => $item['product_id'], ':store_id' => $user['store_id'], ':user_id' => $user['id'], ':qty' => $item['quantity'], ':reference_id' => $id, ':notes' => 'Suppression de la vente']);
+                }
+
+                // Hard delete
+                $delMovementsStmt->execute([':ref' => $id]);
+                $delItemsStmt->execute([':sale_id' => $id]);
+                $delSaleStmt->execute([':id' => $id]);
+                $deleted++;
             }
 
-            // Restore stock for each item
-            $restoreStmt = $db->prepare("
-                UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW()
-                WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)
-            ");
-            $movementStmt = $db->prepare('
-                INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
-                VALUES (:product_id, :store_id, :user_id, \'return\', :qty, NULL, :reference_id, \'sale_cancellation\', :notes)
-            ');
-
-            foreach ($items as $item) {
-                $restoreStmt->execute([
-                    ':qty' => $item['quantity'],
-                    ':product_id' => $item['product_id'],
-                ]);
-
-                $movementStmt->execute([
-                    ':product_id'   => $item['product_id'],
-                    ':store_id'     => $user['store_id'],
-                    ':user_id'      => $user['id'],
-                    ':qty'          => $item['quantity'],
-                    ':reference_id' => $saleId,
-                    ':notes'        => 'Annulation de la vente',
-                ]);
-            }
-
-            // Mark sale as cancelled
-            $stmt = $db->prepare('UPDATE sales SET status = \'cancelled\' WHERE id = :id AND status = \'completed\' RETURNING id');
-            $stmt->execute([':id' => $saleId]);
-
-            if (!$stmt->fetch()) {
+            if ($deleted === 0) {
                 $db->rollBack();
-                jsonError('Sale not found or already cancelled', 404);
+                jsonError('No completed sales found to delete', 404);
             }
 
             $db->commit();
-            jsonSuccess(null, 'Sale cancelled and stock restored');
+            jsonSuccess(['deleted_count' => $deleted], "$deleted vente(s) supprimée(s)");
         } catch (\Exception $e) {
             $db->rollBack();
-            jsonError('Failed to cancel sale: ' . $e->getMessage(), 500);
+            jsonError('Failed to delete sale(s): ' . $e->getMessage(), 500);
         }
         break;
 

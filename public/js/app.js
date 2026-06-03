@@ -2022,11 +2022,13 @@ const App = (() => {
                         <option value="completed" ${params.status === 'completed' ? 'selected' : ''}>Terminée</option>
                         <option value="cancelled" ${params.status === 'cancelled' ? 'selected' : ''}>Annulée</option>
                     </select>
+                    ${isAdmin() ? '<button class="btn btn-sm btn-danger" id="btn-delete-selected" style="display:none">Supprimer la sélection</button>' : ''}
                 </div>
                 <div class="table-container">
                     <table class="table-responsive-cards">
                         <thead>
                             <tr>
+                                ${isAdmin() ? '<th><input type="checkbox" id="select-all-sales"></th>' : ''}
                                 <th>N°</th>
                                 <th>Caissier</th>
                                 <th>Client</th>
@@ -2040,6 +2042,7 @@ const App = (() => {
                         <tbody id="sales-table-body">
                             ${sales.map(s => `
                                 <tr>
+                                    ${isAdmin() ? `<td><input type="checkbox" class="sale-checkbox" value="${s.id}" ${s.status !== 'completed' ? 'disabled' : ''}></td>` : ''}
                                     <td data-label="N°"><strong>${s.sale_number}</strong></td>
                                     <td data-label="Caissier">${s.cashier || '-'}</td>
                                     <td data-label="Client">${s.customer_name || 'Libre'}</td>
@@ -2089,6 +2092,48 @@ const App = (() => {
             document.querySelectorAll('.pagination button').forEach(el => {
                 el.addEventListener('click', () => { if (!el.disabled) renderSales({ ...params, page: el.dataset.page }); });
             });
+
+            // Checkbox selection logic
+            const selectAll = document.getElementById('select-all-sales');
+            const checkboxes = document.querySelectorAll('.sale-checkbox');
+            const deleteBtn = document.getElementById('btn-delete-selected');
+
+            function updateDeleteBtn() {
+                const checked = document.querySelectorAll('.sale-checkbox:checked:not(:disabled)');
+                if (deleteBtn) {
+                    deleteBtn.style.display = checked.length ? '' : 'none';
+                    deleteBtn.textContent = `Supprimer (${checked.length})`;
+                }
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener('change', () => {
+                    checkboxes.forEach(cb => { if (!cb.disabled) cb.checked = selectAll.checked; });
+                    updateDeleteBtn();
+                });
+            }
+
+            checkboxes.forEach(cb => cb.addEventListener('change', updateDeleteBtn));
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const checked = [...document.querySelectorAll('.sale-checkbox:checked:not(:disabled)')].map(cb => cb.value);
+                    if (!checked.length) return;
+                    if (!confirm(`Supprimer ${checked.length} vente(s) définitivement ? Le stock sera restauré.`)) return;
+                    try {
+                        deleteBtn.disabled = true;
+                        deleteBtn.textContent = 'Suppression...';
+                        await API.deleteSales(checked);
+                        showToast(`${checked.length} vente(s) supprimée(s)`, 'success');
+                        markMutated();
+                        renderSales({ ...params, page: 1 });
+                    } catch (err) {
+                        showToast(err.message || 'Échec de la suppression', 'error');
+                        deleteBtn.disabled = false;
+                        updateDeleteBtn();
+                    }
+                });
+            }
 
         } catch (err) {
             if (API.handleAuthError(err)) { renderLogin(); return; }

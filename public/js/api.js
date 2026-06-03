@@ -273,6 +273,10 @@ const API = (() => {
             return request(`/sales?id=${id}`, { method: 'DELETE' });
         },
 
+        async deleteSales(ids) {
+            return request(`/sales?ids=${ids.join(',')}`, { method: 'DELETE' });
+        },
+
         async downloadSaleDocx(id) {
             const url = `${BASE}/sales?docx=1&id=${id}`;
             const token = getToken();
