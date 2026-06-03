@@ -229,7 +229,7 @@ switch ($method) {
 
             $stockStmt = $db->prepare('
                 UPDATE products SET stock_quantity = stock_quantity - :qty, updated_at = NOW()
-                WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)
+                WHERE id = :product_id AND (is_service::text NOT IN (\'1\', \'t\', \'true\') OR is_service IS NULL)
             ');
 
             $movementStmt = $db->prepare('
@@ -333,7 +333,7 @@ switch ($method) {
             // Restore stock for each item
             $restoreStmt = $db->prepare('
                 UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW()
-                WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)
+                WHERE id = :product_id AND (is_service::text NOT IN (\'1\', \'t\', \'true\') OR is_service IS NULL)
             ');
             $movementStmt = $db->prepare('
                 INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
