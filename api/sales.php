@@ -228,7 +228,7 @@ switch ($method) {
 
             $stockStmt = $db->prepare('
                 UPDATE products SET stock_quantity = stock_quantity - :qty, updated_at = NOW()
-                WHERE id = :product_id AND is_service = FALSE
+                WHERE id = :product_id AND (is_service = FALSE OR is_service IS NULL)
             ');
 
             $movementStmt = $db->prepare('
@@ -251,6 +251,12 @@ switch ($method) {
                     ':qty'        => $item['quantity'],
                     ':product_id' => $item['product_id'],
                 ]);
+                $affected = $stockStmt->rowCount();
+                Logger::debug('Stock decrement', [
+                    'product_id' => $item['product_id'],
+                    'qty'        => $item['quantity'],
+                    'affected'   => $affected,
+                ]);
 
                 $movementStmt->execute([
                     ':product_id'   => $item['product_id'],
@@ -264,6 +270,10 @@ switch ($method) {
             }
 
             $db->commit();
+            Logger::info('Sale created with stock update', [
+                'sale_id'  => $sale['id'],
+                'items'    => count($items),
+            ]);
 
             $stmt2 = $db->prepare('
                 SELECT s.*,
@@ -319,7 +329,7 @@ switch ($method) {
             // Restore stock for each item
             $restoreStmt = $db->prepare('
                 UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW()
-                WHERE id = :product_id AND is_service = FALSE
+                WHERE id = :product_id AND (is_service = FALSE OR is_service IS NULL)
             ');
             $movementStmt = $db->prepare('
                 INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
