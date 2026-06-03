@@ -54,7 +54,7 @@ switch ($method) {
         } else {
             // Stock status view (no pagination — show all with a safety cap)
             $search = getSearchTerm();
-            $where = 'WHERE (p.store_id = :store_id OR p.store_id IS NULL) AND (p.is_service = FALSE OR p.is_service IS NULL)';
+            $where = 'WHERE (p.store_id = :store_id OR p.store_id IS NULL)';
             $params = [':store_id' => $user['store_id']];
 
             if ($search) {
@@ -73,7 +73,7 @@ switch ($method) {
 
             $stmt = $db->prepare("
                 SELECT p.id, p.name, p.barcode, p.sku, p.stock_quantity, p.stock_min,
-                       p.stock_max, p.selling_price, p.purchase_price,
+                       p.stock_max, p.selling_price, p.purchase_price, p.is_service,
                        c.name AS category_name,
                        CASE
                            WHEN p.stock_quantity <= 0 THEN 'out_of_stock'

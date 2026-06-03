@@ -1403,7 +1403,10 @@ const App = (() => {
 
         try {
             const res = await API.getStock({ ...params, view: 'status' });
-            const products = res.data.products || [];
+            const products = (res.data.products || []).filter(p => {
+                const svc = p.is_service;
+                return !(svc === true || svc === 1 || svc === '1' || svc === 't' || svc === 'T' || svc === 'true');
+            });
             const body = document.getElementById('page-body');
 
             const lowCount = products.filter(p => p.stock_status === 'low_stock').length;
