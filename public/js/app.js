@@ -70,7 +70,7 @@ const App = (() => {
         }, 3000);
     }
 
-    function createModal({ title, content, size = '', footer = '' } = {}) {
+    function createModal({ title, content, size = '', footer = '', persistent = false } = {}) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
@@ -84,9 +84,11 @@ const App = (() => {
             </div>
         `;
 
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) overlay.remove();
-        });
+        if (!persistent) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
         overlay.querySelectorAll('[data-close-modal]').forEach(el => el.addEventListener('click', () => overlay.remove()));
 
         document.body.appendChild(overlay);
@@ -2272,6 +2274,7 @@ const App = (() => {
         const modal = createModal({
             title: 'Nouvelle vente',
             size: 'modal-fullscreen',
+            persistent: true,
             content: `
                 <style>
                     .sale-layout { display:grid; grid-template-columns:1fr 380px; gap:16px; height:calc(100vh - 130px); }
