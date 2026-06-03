@@ -316,6 +316,8 @@ switch ($method) {
             jsonError('Sale ID is required', 400);
         }
 
+        Auth::requirePermission('sales.delete');
+
         try {
             $db->beginTransaction();
 

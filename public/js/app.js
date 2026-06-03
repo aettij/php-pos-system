@@ -2049,7 +2049,7 @@ const App = (() => {
                                     <td data-label="Statut"><span class="badge badge-${s.status === 'completed' ? 'success' : 'danger'}">${s.status}</span></td>
                                     <td data-label="Actions" style="text-align:right">
                                         <button class="btn btn-sm btn-secondary" data-view-sale="${s.id}">Voir</button>
-                                        ${s.status === 'completed' ? `<button class="btn btn-sm btn-danger" data-cancel-sale="${s.id}">Annuler</button>` : ''}
+                                        ${s.status === 'completed' && isAdmin() ? `<button class="btn btn-sm btn-danger" data-cancel-sale="${s.id}">Supprimer</button>` : ''}
                                     </td>
                                 </tr>
                             `).join('')}
@@ -2146,14 +2146,14 @@ const App = (() => {
     }
 
     async function cancelSale(id) {
-        if (!confirm('Annuler cette vente ? Cette action est irréversible.')) return;
+        if (!confirm('Supprimer cette vente ? Le stock sera restauré.')) return;
         try {
             await API.cancelSale(id);
-            showToast('Vente annulée', 'success');
+            showToast('Vente supprimée', 'success');
             markMutated();
             renderSales();
         } catch (err) {
-            showToast(err.message || 'Échec de l\'annulation de la vente', 'error');
+            showToast(err.message || 'Échec de la suppression', 'error');
         }
     }
 
