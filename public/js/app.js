@@ -87,7 +87,7 @@ const App = (() => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) overlay.remove();
         });
-        overlay.querySelector('[data-close-modal]').addEventListener('click', () => overlay.remove());
+        overlay.querySelectorAll('[data-close-modal]').forEach(el => el.addEventListener('click', () => overlay.remove()));
 
         document.body.appendChild(overlay);
         return overlay;
@@ -2145,7 +2145,7 @@ const App = (() => {
         try {
             const res = await API.getSale(id);
             const s = res.data;
-            createModal({
+            const modal = createModal({
                 title: `Vente ${s.sale_number}`,
                 size: 'modal-lg',
                 content: `
@@ -2176,6 +2176,7 @@ const App = (() => {
                     ${s.notes ? `<div class="detail-row" style="margin-top:12px;"><span class="detail-label">Notes</span><span class="detail-value">${s.notes}</span></div>` : ''}
                     <div style="margin-top:16px;display:flex;gap:8px;">
                         <button class="btn btn-secondary" id="btn-download-invoice">&#128196; Télécharger la facture (Word)</button>
+                        ${s.status === 'completed' && isAdmin() ? `<button class="btn btn-danger" id="btn-delete-sale-popup">Supprimer cette vente</button>` : ''}
                     </div>
                 `,
             });
@@ -2184,6 +2185,19 @@ const App = (() => {
                 API.downloadSaleDocx(id).catch(err => {
                     showToast(err.message || 'Échec du téléchargement', 'error');
                 });
+            });
+
+            document.getElementById('btn-delete-sale-popup')?.addEventListener('click', async () => {
+                if (!confirm('Supprimer cette vente ? Le stock sera restauré.')) return;
+                try {
+                    await API.deleteSales([id]);
+                    showToast('Vente supprimée', 'success');
+                    modal.remove();
+                    markMutated();
+                    renderSales();
+                } catch (err) {
+                    showToast(err.message || 'Échec de la suppression', 'error');
+                }
             });
         } catch (err) {
             showToast(err.message || 'Échec du chargement de la vente', 'error');
