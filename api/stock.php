@@ -54,7 +54,7 @@ switch ($method) {
         } else {
             // Stock status view (no pagination — show all with a safety cap)
             $search = getSearchTerm();
-            $where = 'WHERE (p.store_id = :store_id OR p.store_id IS NULL)';
+            $where = 'WHERE (p.store_id = :store_id OR p.store_id IS NULL) AND p.is_active = TRUE';
             $params = [':store_id' => $user['store_id']];
 
             if ($search) {
