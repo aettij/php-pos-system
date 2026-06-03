@@ -160,16 +160,15 @@ switch ($type) {
                 COUNT(*) AS sale_count,
                 COALESCE(SUM(s.total_amount), 0) AS total_revenue,
                 COALESCE(SUM(s.tax_amount), 0) AS total_tax,
-                COUNT(CASE WHEN pm.code = 'CASH' THEN 1 END) AS cash_count,
-                COALESCE(SUM(CASE WHEN pm.code = 'CASH' THEN s.total_amount ELSE 0 END), 0) AS cash_revenue,
-                COUNT(CASE WHEN pm.code = 'CARD' THEN 1 END) AS card_count,
-                COALESCE(SUM(CASE WHEN pm.code = 'CARD' THEN s.total_amount ELSE 0 END), 0) AS card_revenue,
-                COUNT(CASE WHEN pm.code = 'MOBILE' THEN 1 END) AS mobile_count,
-                COALESCE(SUM(CASE WHEN pm.code = 'MOBILE' THEN s.total_amount ELSE 0 END), 0) AS mobile_revenue,
-                COUNT(CASE WHEN pm.code NOT IN ('CASH','CARD','MOBILE') THEN 1 END) AS other_count,
-                COALESCE(SUM(CASE WHEN pm.code NOT IN ('CASH','CARD','MOBILE') THEN s.total_amount ELSE 0 END), 0) AS other_revenue
+                COUNT(CASE WHEN s.payment_method_id = 1 THEN 1 END) AS cash_count,
+                COALESCE(SUM(CASE WHEN s.payment_method_id = 1 THEN s.total_amount ELSE 0 END), 0) AS cash_revenue,
+                COUNT(CASE WHEN s.payment_method_id = 2 THEN 1 END) AS card_count,
+                COALESCE(SUM(CASE WHEN s.payment_method_id = 2 THEN s.total_amount ELSE 0 END), 0) AS card_revenue,
+                COUNT(CASE WHEN s.payment_method_id = 6 THEN 1 END) AS mobile_count,
+                COALESCE(SUM(CASE WHEN s.payment_method_id = 6 THEN s.total_amount ELSE 0 END), 0) AS mobile_revenue,
+                COUNT(CASE WHEN s.payment_method_id NOT IN (1, 2, 6) THEN 1 END) AS other_count,
+                COALESCE(SUM(CASE WHEN s.payment_method_id NOT IN (1, 2, 6) THEN s.total_amount ELSE 0 END), 0) AS other_revenue
             FROM sales s
-            LEFT JOIN payment_methods pm ON pm.id = s.payment_method_id
             WHERE (s.store_id = :store_id OR s.store_id IS NULL)
             GROUP BY DATE(s.sale_date)
             ORDER BY sale_date DESC
