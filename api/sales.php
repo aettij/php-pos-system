@@ -241,11 +241,6 @@ switch ($method) {
                 VALUES (:sale_id, :product_id, :quantity, :unit_price, :purchase_price, :discount_pct, :tax_rate)
             ');
 
-            $stockStmt = $db->prepare("
-                UPDATE products SET stock_quantity = stock_quantity - :qty, updated_at = NOW()
-                WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)
-            ");
-
             $movementStmt = $db->prepare('
                 INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes)
                 VALUES (:product_id, :store_id, :user_id, \'sale\', :qty, :unit_cost, :reference_id, \'sale\', :notes)
@@ -260,20 +255,6 @@ switch ($method) {
                     ':purchase_price' => $item['purchase_price'],
                     ':discount_pct'   => $item['discount_pct'],
                     ':tax_rate'       => $item['tax_rate'],
-                ]);
-
-                $stockStmt->execute([
-                    ':qty'        => $item['quantity'],
-                    ':product_id' => $item['product_id'],
-                ]);
-                $affected = $stockStmt->rowCount();
-                if ($affected === 0 && !$item['is_service']) {
-                    throw new \RuntimeException("Stock decrement failed for product {$item['product_id']} — product not found or is_service flag mismatch");
-                }
-                Logger::debug('Stock decrement', [
-                    'product_id' => $item['product_id'],
-                    'qty'        => $item['quantity'],
-                    'affected'   => $affected,
                 ]);
 
                 $movementStmt->execute([
@@ -337,7 +318,6 @@ switch ($method) {
             $db->beginTransaction();
 
             $itemsStmt = $db->prepare('SELECT product_id, quantity FROM sale_items WHERE sale_id = :sale_id');
-            $restoreStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW() WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)");
             $movementStmt = $db->prepare('INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes) VALUES (:product_id, :store_id, :user_id, \'return\', :qty, NULL, :reference_id, \'sale_cancellation\', :notes)');
             $checkStmt = $db->prepare('SELECT id FROM sales WHERE id = :id AND status = \'completed\'');
             $delItemsStmt = $db->prepare('DELETE FROM sale_items WHERE sale_id = :sale_id');
@@ -349,10 +329,9 @@ switch ($method) {
                 $checkStmt->execute([':id' => $id]);
                 if (!$checkStmt->fetch()) continue;
 
-                // Restore stock
+                // Record return movement before deleting related rows
                 $itemsStmt->execute([':sale_id' => $id]);
                 foreach ($itemsStmt->fetchAll() as $item) {
-                    $restoreStmt->execute([':qty' => $item['quantity'], ':product_id' => $item['product_id']]);
                     $movementStmt->execute([':product_id' => $item['product_id'], ':store_id' => $user['store_id'], ':user_id' => $user['id'], ':qty' => $item['quantity'], ':reference_id' => $id, ':notes' => 'Suppression de la vente']);
                 }
 

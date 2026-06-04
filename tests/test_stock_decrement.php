@@ -59,14 +59,7 @@ $itemStmt->execute([':sale_id' => $saleId, ':product_id' => $pid, ':qty' => $qty
 $check->execute([':id' => $pid]);
 echo "After sale_item INSERT: " . $check->fetchColumn() . "\n";
 
-// 3. After stock decrement UPDATE
-$stockStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity - :qty, updated_at = NOW() WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)");
-$stockStmt->execute([':qty' => $qty, ':product_id' => $pid]);
-$affected = $stockStmt->rowCount();
-$check->execute([':id' => $pid]);
-echo "After stock UPDATE:    " . $check->fetchColumn() . "  (affected: $affected)\n";
-
-// 4. After stock_movement INSERT
+// 3. After stock_movement INSERT (no trigger on stock_movements)
 $movementStmt = $db->prepare("INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, reference_id, reference_type) VALUES (:product_id, :store_id, :user_id, 'sale', :qty, :ref, 'sale')");
 $movementStmt->execute([':product_id' => $pid, ':store_id' => $storeId, ':user_id' => $userId, ':qty' => -$qty, ':ref' => $saleId]);
 $check->execute([':id' => $pid]);
@@ -79,6 +72,12 @@ $expected = $initialStock - $qty;
 echo "\nExpected final:  $expected\n";
 echo "Actual final:    $final\n";
 echo "Result:          " . (($final === $expected) ? "✓ PASS (single decrement)" : "✗ FAIL (decreased by " . ($initialStock - $final) . " instead of $qty)") . "\n";
+
+// 4. After sale_items DELETE (verify trigger restores stock)
+$delStmt = $db->prepare("DELETE FROM sale_items WHERE sale_id = :sale_id");
+$delStmt->execute([':sale_id' => $saleId]);
+$check->execute([':id' => $pid]);
+echo "After sale_items DELETE: " . $check->fetchColumn() . "\n";
 
 $db->rollBack();
 echo "Rolled back.\n";
