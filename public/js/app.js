@@ -2308,6 +2308,7 @@ const App = (() => {
                     .stock-badge.stock-low { background:#dc2626; }
                     .stock-badge.stock-out { background:#dc2626; }
 
+                    .modal-fullscreen .modal-body { overflow:hidden; padding:0; } .sale-layout { height:calc(100vh - var(--modal-header-height,56px)); padding:20px 24px; } .sale-layout > div { min-height:0; } .product-grid { height:100%; overflow-y:auto; }
                     @media (max-width:768px) { .sale-layout { grid-template-columns:1fr; } .product-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); } }
                 </style>
                 <div class="sale-layout">
@@ -2321,7 +2322,7 @@ const App = (() => {
                         </div>
                         <div class="product-grid" id="product-grid">${productRowsHtml || '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:0.85rem;">Aucun produit disponible</div>'}</div>
                     </div>
-                    <div>
+                    <div style="display:flex;flex-direction:column;overflow-y:auto;">
                         <div class="form-group">
                             <label class="form-label">Client</label>
                             <select class="form-control" id="sale-customer">${customerOptions}</select>
@@ -2363,7 +2364,7 @@ const App = (() => {
                             </div>
                         </div>
                         <h4 style="margin-bottom:8px;">Panier</h4>
-                        <div class="cart-items" id="cart-items">
+                        <div class="cart-items" id="cart-items" style="flex:1;overflow-y:auto;">
                             <div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:0.85rem;">Ajoutez des produits depuis la liste</div>
                         </div>
                         <div style="margin-top:8px;">
@@ -2379,7 +2380,9 @@ const App = (() => {
                             <label class="form-label">Notes</label>
                             <textarea class="form-control" id="sale-notes" rows="2"></textarea>
                         </div>
-                        <button class="btn btn-success btn-lg" id="btn-complete-sale" style="width:100%;">Finaliser la vente</button>
+                        <div style="position:sticky;bottom:0;padding:8px 0 0;text-align:right;background:var(--bg);">
+                            <button class="btn btn-success btn-lg" id="btn-complete-sale" style="min-width:220px;">Finaliser la vente</button>
+                        </div>
                     </div>
                 </div>
             `,
