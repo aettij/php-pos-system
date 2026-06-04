@@ -150,8 +150,14 @@ switch ($method) {
 
             $subtotal = 0;
             $items = [];
+            $seenProductIds = [];
 
             foreach ($input['items'] as $item) {
+                $pid = $item['product_id'] ?? '';
+                if (isset($seenProductIds[$pid])) {
+                    throw new \InvalidArgumentException("Duplicate product_id in sale items: $pid");
+                }
+                $seenProductIds[$pid] = true;
                 $itemErrors = validateRequired($item, ['product_id', 'quantity', 'unit_price']);
                 if ($itemErrors) {
                     throw new \InvalidArgumentException('Each item requires product_id, quantity, and unit_price');

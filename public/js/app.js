@@ -1574,7 +1574,9 @@ const App = (() => {
             `,
         });
 
-        document.getElementById('btn-save-adjustment').addEventListener('click', async () => {
+        const saveBtn = document.getElementById('btn-save-adjustment');
+        saveBtn.addEventListener('click', async () => {
+            if (saveBtn.disabled) return;
             const form = document.getElementById('stock-adjust-form');
             const data = Object.fromEntries(new FormData(form));
             data.quantity = parseFloat(data.quantity);
@@ -1582,6 +1584,9 @@ const App = (() => {
 
             if (!data.product_id) { showToast('Sélectionnez un produit', 'error'); return; }
             if (!data.quantity) { showToast('Entrez une quantité', 'error'); return; }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Enregistrement...';
 
             try {
                 await API.adjustStock(data);
@@ -1591,6 +1596,8 @@ const App = (() => {
                 renderStock();
             } catch (err) {
                 showToast(err.message || 'Échec de l\'ajustement du stock', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Enregistrer l\'ajustement';
             }
         });
     }
