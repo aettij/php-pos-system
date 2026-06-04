@@ -178,7 +178,9 @@ switch ($method) {
                     throw new \InvalidArgumentException("Product {$item['product_id']} not found or inactive");
                 }
 
-                if (!$product['is_service'] && !$product['allow_negative_stock'] && $product['stock_quantity'] < $qty) {
+                $isService = !in_array($product['is_service'], [false, 0, '0', 'f', 'F', 'false', 'FALSE'], true);
+
+                if (!$isService && !$product['allow_negative_stock'] && $product['stock_quantity'] < $qty) {
                     throw new \InvalidArgumentException("Insufficient stock for product {$item['product_id']}");
                 }
 
@@ -189,7 +191,7 @@ switch ($method) {
                     'purchase_price' => (float)$product['purchase_price'],
                     'discount_pct'   => $discount,
                     'tax_rate'       => $tax,
-                    'is_service'     => (bool)$product['is_service'],
+                    'is_service'     => $isService,
                 ];
             }
 
