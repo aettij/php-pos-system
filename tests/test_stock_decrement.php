@@ -22,10 +22,26 @@ Database::loadConfig();
 $db = Database::connect();
 $db->beginTransaction();
 
-// 1. Create a test product with known stock
+// 1. Use existing store + user (or create temp ones)
+$st = $db->prepare("SELECT id FROM stores LIMIT 1");
+$st->execute();
+$storeId = $st->fetchColumn();
+if (!$storeId) {
+    $st = $db->prepare("INSERT INTO stores (id, name) VALUES (gen_random_uuid(), 'Test Store') RETURNING id");
+    $st->execute();
+    $storeId = $st->fetchColumn();
+}
+
+$st = $db->prepare("SELECT id FROM users LIMIT 1");
+$st->execute();
+$userId = $st->fetchColumn();
+if (!$userId) {
+    $st = $db->prepare("INSERT INTO users (id, email, password_hash, first_name, store_id) VALUES (gen_random_uuid(), 'test@test.com', :pwh, 'Test', :sid) RETURNING id");
+    $st->execute([':pwh' => password_hash('test', PASSWORD_BCRYPT), ':sid' => $storeId]);
+    $userId = $st->fetchColumn();
+}
+
 $name = 'TEST-' . bin2hex(random_bytes(4));
-$storeId = '00000000-0000-0000-0000-000000000001';
-$userId  = '00000000-0000-0000-0000-000000000001';
 $initialStock = 100;
 
 $insert = $db->prepare("
