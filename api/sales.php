@@ -318,6 +318,7 @@ switch ($method) {
             $db->beginTransaction();
 
             $itemsStmt = $db->prepare('SELECT product_id, quantity FROM sale_items WHERE sale_id = :sale_id');
+            $restoreStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity + :qty, updated_at = NOW() WHERE id = :product_id AND (is_service::text NOT IN ('1', 't', 'true') OR is_service IS NULL)");
             $movementStmt = $db->prepare('INSERT INTO stock_movements (product_id, store_id, user_id, movement_type, quantity, unit_cost, reference_id, reference_type, notes) VALUES (:product_id, :store_id, :user_id, \'return\', :qty, NULL, :reference_id, \'sale_cancellation\', :notes)');
             $checkStmt = $db->prepare('SELECT id FROM sales WHERE id = :id AND status = \'completed\'');
             $delItemsStmt = $db->prepare('DELETE FROM sale_items WHERE sale_id = :sale_id');
@@ -329,9 +330,10 @@ switch ($method) {
                 $checkStmt->execute([':id' => $id]);
                 if (!$checkStmt->fetch()) continue;
 
-                // Record return movement before deleting related rows
+                // Restore stock (no trigger on sale_items DELETE)
                 $itemsStmt->execute([':sale_id' => $id]);
                 foreach ($itemsStmt->fetchAll() as $item) {
+                    $restoreStmt->execute([':qty' => $item['quantity'], ':product_id' => $item['product_id']]);
                     $movementStmt->execute([':product_id' => $item['product_id'], ':store_id' => $user['store_id'], ':user_id' => $user['id'], ':qty' => $item['quantity'], ':reference_id' => $id, ':notes' => 'Suppression de la vente']);
                 }
 

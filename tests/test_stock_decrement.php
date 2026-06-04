@@ -68,7 +68,7 @@ echo "After movement INSERT: " . $check->fetchColumn() . "\n";
 // Summary
 $check->execute([':id' => $pid]);
 $final = (float)$check->fetchColumn();
-$expected = $initialStock - $qty;
+$expected = (float)($initialStock - $qty);
 echo "\nExpected final:  $expected\n";
 echo "Actual final:    $final\n";
 echo "Result:          " . (($final === $expected) ? "✓ PASS (single decrement)" : "✗ FAIL (decreased by " . ($initialStock - $final) . " instead of $qty)") . "\n";
